@@ -52,6 +52,32 @@ info:
   title: Fiber Golang Mongo Grpc Websocet etc..
   version: "1.0"
 paths:
+  /user/getUser/{id}:
+    get:
+      consumes:
+      - application/json
+      description: GetUser Deatils By ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.UserModel'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get User By ID
+      tags:
+      - Users
   /user/signin:
     post:
       consumes:
