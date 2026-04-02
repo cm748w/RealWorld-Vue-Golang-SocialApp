@@ -3,9 +3,11 @@ module Server
 go 1.26.1
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/gofiber/fiber/v2 v2.52.12
 	github.com/gofiber/swagger v1.1.1
+	github.com/joho/godotenv v1.5.1
 	github.com/swaggo/swag v1.16.4
 	go.mongodb.org/mongo-driver v1.17.9
 	golang.org/x/crypto v0.49.0

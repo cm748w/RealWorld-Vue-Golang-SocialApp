@@ -3,12 +3,14 @@ package main
 import (
 	"Server/database"
 	"Server/routes"
+	"log"
 
 	_ "Server/docs"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/swagger"
+	"github.com/joho/godotenv"
 )
 
 // @title Fiber Golang Mongo Grpc Websocet etc..
@@ -22,6 +24,11 @@ import (
 // @name Authorization
 // @description Type "Bearer" followed by a space and the token
 func main() {
+	// load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	database.Connect()
 	app := fiber.New()
 

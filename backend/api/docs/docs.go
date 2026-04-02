@@ -15,6 +15,47 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/user/signin": {
+            "post": {
+                "description": "Login an user by providing email, password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "login a  user",
+                "parameters": [
+                    {
+                        "description": "user Login details",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.LoginUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.UserModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/user/signup": {
             "post": {
                 "description": "Register an ew user by providing email, password , first name , last name",
@@ -64,10 +105,21 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "firstname": {
+                "firstName": {
                     "type": "string"
                 },
-                "lastname": {
+                "lastName": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.LoginUser": {
+            "type": "object",
+            "properties": {
+                "email": {
                     "type": "string"
                 },
                 "password": {

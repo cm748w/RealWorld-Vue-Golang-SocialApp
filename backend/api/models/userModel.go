@@ -20,3 +20,8 @@ type CreateUser struct {
 	FirstName string
 	LastName  string
 }
+
+type LoginUser struct {
+	Email    string
+	Password string
+}
