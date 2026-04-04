@@ -25,3 +25,9 @@ type LoginUser struct {
 	Email    string
 	Password string
 }
+
+type UpdateUser struct {
+	Name     string
+	ImageUrl string
+	Bio      string
+}

@@ -18,6 +18,15 @@ definitions:
       password:
         type: string
     type: object
+  models.UpdateUser:
+    properties:
+      bio:
+        type: string
+      imageUrl:
+        type: string
+      name:
+        type: string
+    type: object
   models.UserModel:
     properties:
       _id:
@@ -52,6 +61,92 @@ info:
   title: Fiber Golang Mongo Grpc Websocet etc..
   version: "1.0"
 paths:
+  /user/{id}/following:
+    patch:
+      consumes:
+      - application/json
+      description: follow or  un follow a user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Follow/UnFollow User
+      tags:
+      - Users
+  /user/Update/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: update user deatils
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 'deatils '
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateUser'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.UserModel'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: update user data
+      tags:
+      - Users
+  /user/getSug:
+    get:
+      consumes:
+      - application/json
+      description: get suggested userses based on the current user's following list
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Suggersted users
+      tags:
+      - Users
   /user/getUser/{id}:
     get:
       consumes:
