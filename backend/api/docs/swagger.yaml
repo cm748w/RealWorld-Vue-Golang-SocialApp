@@ -90,17 +90,12 @@ paths:
       summary: Follow/UnFollow User
       tags:
       - Users
-  /user/Update/{id}:
+  /user/Update:
     patch:
       consumes:
       - application/json
       description: update user deatils
       parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
       - description: 'deatils '
         in: body
         name: user
@@ -122,6 +117,29 @@ paths:
       security:
       - BearerAuth: []
       summary: update user data
+      tags:
+      - Users
+  /user/delete:
+    delete:
+      consumes:
+      - application/json
+      description: delete user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: delete user
       tags:
       - Users
   /user/getSug:
