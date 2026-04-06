@@ -121,3 +121,59 @@ func GetPost(c *fiber.Ctx) error {
 		})
 
 }
+
+// Update Post
+// @Summary Update post
+// @Description Update post
+// @Tags Posts
+// @Accept json
+// @Produce json
+// @Param id path string true "Post id"
+// @Param post body models.CreateOrUpdatePost true "update post details"
+// @Success 200 {object} models.PostModel
+// @Failure 400 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /posts/{id} [patch]
+func UpdatePost(c *fiber.Ctx) error {
+
+	var PostSchema = database.DB.Collection("posts")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var newData models.CreateOrUpdatePost
+	if err := c.BodyParser(&newData); err != nil {
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"error":   "Invalid request body",
+			"details": err.Error(),
+		})
+	}
+	// authorization start
+	var authPost models.PostModel
+	primID, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	PostSchema.FindOne(ctx, bson.M{"_id": primID}).Decode(&authPost)
+
+	if authPost.Creator != c.Locals("userId").(string) {
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"error": "You Are Not authorized to update this post.",
+		})
+	}
+
+	// set data end
+	authPost.Title = newData.Title
+	authPost.Message = newData.Message
+	authPost.SelectedFile = newData.SelectedFile
+	// create post
+	_, err = PostSchema.UpdateOne(ctx, bson.M{"_id": authPost.ID}, bson.M{"$set": authPost})
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"data": err.Error()})
+	} else {
+		return c.Status(fiber.StatusCreated).JSON(fiber.Map{"post": authPost})
+	}
+
+}
