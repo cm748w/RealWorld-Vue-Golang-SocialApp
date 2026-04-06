@@ -18,11 +18,11 @@ import (
 // @Accept json
 // @Produce json
 // @Param post body models.CreateOrUpdatePost true "post create details"
-// @Success 201 {object} models.PostModel
+// @Success 200 {object} models.PostModel
 // @Failure 400 {object} map[string]interface{}
 // @Security BearerAuth
-// Router /posts [post]
-func CraetePost(c *fiber.Ctx) error {
+// @Router /posts [post]
+func CreatePost(c *fiber.Ctx) error {
 
 	var UserSchema = database.DB.Collection("users")
 	var PostSchema = database.DB.Collection("posts")
@@ -80,10 +80,10 @@ func CraetePost(c *fiber.Ctx) error {
 // @Tags Posts
 // @Accept json
 // @Produce json
-// @Param id pass string true "Post id"
+// @Param id path string true "Post id"
 // @Success 200 {object} models.PostModel
 // @Failure 400 {object} map[string]interface{}
-// Router /posts/{id} [get]
+// @Router /posts/{id} [get]
 func GetPost(c *fiber.Ctx) error {
 
 	var PostSchema = database.DB.Collection("posts")

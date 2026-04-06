@@ -1,5 +1,18 @@
 basePath: /
 definitions:
+  models.CreateOrUpdatePost:
+    properties:
+      message:
+        minLength: 5
+        type: string
+      selectedFile:
+        type: string
+      title:
+        type: string
+    required:
+    - message
+    - title
+    type: object
   models.CreateUser:
     properties:
       email:
@@ -17,6 +30,35 @@ definitions:
         type: string
       password:
         type: string
+    type: object
+  models.PostModel:
+    properties:
+      _id:
+        type: string
+      comments:
+        items:
+          type: string
+        type: array
+      createdAt:
+        type: string
+      creator:
+        type: string
+      likes:
+        items:
+          type: string
+        type: array
+      message:
+        minLength: 5
+        type: string
+      name:
+        type: string
+      selectedFile:
+        type: string
+      title:
+        type: string
+    required:
+    - message
+    - title
     type: object
   models.UpdateUser:
     properties:
@@ -61,6 +103,61 @@ info:
   title: Fiber Golang Mongo Grpc Websocet etc..
   version: "1.0"
 paths:
+  /posts:
+    post:
+      consumes:
+      - application/json
+      description: create new post
+      parameters:
+      - description: post create details
+        in: body
+        name: post
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateOrUpdatePost'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PostModel'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: create a new post
+      tags:
+      - Posts
+  /posts/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a new post
+      parameters:
+      - description: Post id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PostModel'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get  a new post
+      tags:
+      - Posts
   /user/{id}/following:
     patch:
       consumes:
