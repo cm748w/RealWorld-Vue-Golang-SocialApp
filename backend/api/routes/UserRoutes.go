@@ -15,7 +15,7 @@ func SetupUserRoutes(app *fiber.App) {
 	// getSug
 	app.Get("/user/getSug", middleware.AuthMiddleware, controllers.GetSugUser)
 	// Update
-	app.Patch("/user/Update", middleware.AuthMiddleware, controllers.UpdateUser)
+	app.Patch("/user/update", middleware.AuthMiddleware, controllers.UpdateUser)
 	// following
 	app.Patch("/user/:id/following", middleware.AuthMiddleware, controllers.FollowingUser)
 	// delete

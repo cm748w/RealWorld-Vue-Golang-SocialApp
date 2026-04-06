@@ -90,35 +90,6 @@ paths:
       summary: Follow/UnFollow User
       tags:
       - Users
-  /user/Update:
-    patch:
-      consumes:
-      - application/json
-      description: update user deatils
-      parameters:
-      - description: 'deatils '
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/models.UpdateUser'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/models.UserModel'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: update user data
-      tags:
-      - Users
   /user/delete:
     delete:
       consumes:
@@ -246,6 +217,35 @@ paths:
       summary: Gegister a new user
       tags:
       - Authentication
+  /user/update:
+    patch:
+      consumes:
+      - application/json
+      description: update user deatils
+      parameters:
+      - description: 'deatils '
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateUser'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.UserModel'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: update user data
+      tags:
+      - Users
 schemes:
 - http
 securityDefinitions:
