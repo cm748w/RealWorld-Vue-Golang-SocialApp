@@ -69,7 +69,7 @@ func GetUserByID(c *fiber.Ctx) error {
 // @Success 201 {object} models.UserModel
 // @Failure 400 {object} map[string]interface{}
 // @security BearerAuth
-// @Router /user/Update [patch]
+// @Router /user/update [patch]
 func UpdateUser(c *fiber.Ctx) error {
 
 	var UserSchema = database.DB.Collection("users")
