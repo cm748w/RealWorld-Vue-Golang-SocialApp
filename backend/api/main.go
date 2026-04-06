@@ -46,7 +46,7 @@ func main() {
 	// setup routes
 	routes.SetupAuthRoutes(app)
 	routes.SetupUserRoutes(app)
-
+	routes.SetupPostRoutes(app)
 	// Serve swager doctionation
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
