@@ -17,7 +17,7 @@ func SetupPostRoutes(app *fiber.App) {
 	// })
 
 	// create
-	app.Post("/posts", middleware.AuthMiddleware, validation.ValidatePost, controllers.CraetePost) // 我知道craete是错的
+	app.Post("/posts", middleware.AuthMiddleware, validation.ValidatePost, controllers.CreatePost)
 	// getall
 	// search
 	// get one
