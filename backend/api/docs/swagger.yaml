@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+  models.CommentPost:
+    properties:
+      value:
+        type: string
+    required:
+    - value
+    type: object
   models.CreateOrUpdatePost:
     properties:
       message:
@@ -226,6 +233,69 @@ paths:
       security:
       - BearerAuth: []
       summary: Update post
+      tags:
+      - Posts
+  /posts/{id}/commentPost:
+    post:
+      consumes:
+      - application/json
+      description: comment post
+      parameters:
+      - description: Post id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: comment value
+        in: body
+        name: post
+        required: true
+        schema:
+          $ref: '#/definitions/models.CommentPost'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PostModel'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: comment post
+      tags:
+      - Posts
+  /posts/search:
+    get:
+      consumes:
+      - application/json
+      description: get posts users maching the search query
+      parameters:
+      - description: search query
+        in: query
+        name: searchQuery
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: get posts users by search
       tags:
       - Posts
   /user/{id}/following:
