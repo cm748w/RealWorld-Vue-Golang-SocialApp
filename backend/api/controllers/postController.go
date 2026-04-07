@@ -4,12 +4,30 @@ import (
 	"Server/database"
 	"Server/models"
 	"context"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+func getEnvInt(key string, fallback int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed < 1 {
+		return fallback
+	}
+
+	return parsed
+}
 
 // Create Post
 // @Summary create a new post
@@ -31,7 +49,7 @@ func CreatePost(c *fiber.Ctx) error {
 
 	var body models.CreateOrUpdatePost
 	if err := c.BodyParser(&body); err != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid request body",
 			"details": err.Error(),
 		})
@@ -49,8 +67,13 @@ func CreatePost(c *fiber.Ctx) error {
 	//
 
 	var user models.UserModel
-	objId, _ := primitive.ObjectIDFromHex(c.Locals("userId").(string))
-	err := UserSchema.FindOne(ctx, bson.M{"_id": objId}).Decode(&user)
+	objId, err := primitive.ObjectIDFromHex(c.Locals("userId").(string))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid user id",
+		})
+	}
+	err = UserSchema.FindOne(ctx, bson.M{"_id": objId}).Decode(&user)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": err.Error(),
@@ -68,7 +91,11 @@ func CreatePost(c *fiber.Ctx) error {
 		var createdPost *models.PostModel
 		query := bson.M{"_id": result.InsertedID}
 
-		PostSchema.FindOne(ctx, query).Decode(&createdPost)
+		if err := PostSchema.FindOne(ctx, query).Decode(&createdPost); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "failed to load created post",
+			})
+		}
 		return c.Status(fiber.StatusCreated).JSON(createdPost)
 	}
 
@@ -92,14 +119,14 @@ func GetPost(c *fiber.Ctx) error {
 
 	id := c.Params("id")
 	if id == "" {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "post id is required",
 		})
 	}
 
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
@@ -108,6 +135,14 @@ func GetPost(c *fiber.Ctx) error {
 
 	err = PostSchema.FindOne(ctx, query).Decode(&post)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"success": false,
+				"message": "post Not Found",
+				"error":   err.Error(),
+			})
+		}
+
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"success": false,
 			"message": "post Not Found",
@@ -142,7 +177,7 @@ func UpdatePost(c *fiber.Ctx) error {
 
 	var newData models.CreateOrUpdatePost
 	if err := c.BodyParser(&newData); err != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid request body",
 			"details": err.Error(),
 		})
@@ -151,14 +186,24 @@ func UpdatePost(c *fiber.Ctx) error {
 	var authPost models.PostModel
 	primID, err := primitive.ObjectIDFromHex(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
-	PostSchema.FindOne(ctx, bson.M{"_id": primID}).Decode(&authPost)
+	if err := PostSchema.FindOne(ctx, bson.M{"_id": primID}).Decode(&authPost); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "post not found",
+			})
+		}
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to load post",
+		})
+	}
 
 	if authPost.Creator != c.Locals("userId").(string) {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "You Are Not authorized to update this post.",
 		})
 	}
@@ -176,4 +221,132 @@ func UpdatePost(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{"post": authPost})
 	}
 
+}
+
+// GetAllPosts
+// @Summary get all posts
+// @Description get all posts with pagination
+// @Tags Posts
+// @Accept json
+// @Produce json
+// @Param page query int false "page number"
+// @Param limit query int false "page size"
+// @Param id query string true "user id"
+// @Success 200 {object} []models.PostModel
+// @Failure 400 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /posts [get]
+func GetAllPosts(c *fiber.Ctx) error {
+
+	var PostSchema = database.DB.Collection("posts")
+	var userSchema = database.DB.Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var user models.UserModel
+	var posts []models.PostModel
+
+	userid := c.Query("id")
+	if userid == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "user id is required",
+		})
+	}
+
+	page, err := strconv.Atoi(c.Query("page", "1"))
+	if err != nil || page < 1 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "page must be a positive integer",
+		})
+	}
+
+	defaultLimit := getEnvInt("POSTS_PAGE_SIZE", 2)
+	maxLimit := getEnvInt("POSTS_MAX_PAGE_SIZE", 50)
+	limit, err := strconv.Atoi(c.Query("limit", strconv.Itoa(defaultLimit)))
+	if err != nil || limit < 1 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "limit must be a positive integer",
+		})
+	}
+	if limit > maxLimit {
+		limit = maxLimit
+	}
+
+	// get user following list ides and add our user id to it
+	mainUserID, err := primitive.ObjectIDFromHex(userid)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid user id",
+		})
+	}
+
+	if err := userSchema.FindOne(ctx, bson.M{"_id": mainUserID}).Decode(&user); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "user not found",
+		})
+	}
+
+	following := make([]string, 0, len(user.Following)+1)
+	seen := make(map[string]struct{}, len(user.Following)+1)
+	for _, followingID := range user.Following {
+		if _, exists := seen[followingID]; exists {
+			continue
+		}
+		seen[followingID] = struct{}{}
+		following = append(following, followingID)
+	}
+	if _, exists := seen[userid]; !exists {
+		following = append(following, userid)
+	}
+	///
+
+	findOptions := options.Find()
+	filter := bson.M{"creator": bson.M{"$in": following}}
+
+	// get total num of posts
+	total, err := PostSchema.CountDocuments(ctx, filter)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to count posts",
+		})
+	}
+
+	findOptions.SetSkip(int64((page - 1) * limit))
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetSort(bson.D{{Key: "_id", Value: -1}})
+
+	// start get posts
+	cursor, err := PostSchema.Find(ctx, filter, findOptions)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to query posts",
+		})
+	}
+
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var post models.PostModel
+		if err := cursor.Decode(&post); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "failed to decode post",
+			})
+		}
+		posts = append(posts, post)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "cursor iteration failed",
+		})
+	}
+
+	if posts == nil {
+		posts = make([]models.PostModel, 0)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data":          posts,
+		"currentPage":   page,
+		"numberOfPages": (total + int64(limit) - 1) / int64(limit),
+	})
 }

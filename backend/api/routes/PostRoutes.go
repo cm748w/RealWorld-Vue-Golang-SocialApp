@@ -12,6 +12,7 @@ func SetupPostRoutes(app *fiber.App) {
 	// create
 	app.Post("/posts", middleware.AuthMiddleware, validation.ValidatePost, controllers.CreatePost)
 	// getall
+	app.Get("/posts", controllers.GetAllPosts)
 	// search
 	// get one
 	app.Get("/posts/:id", controllers.GetPost)
