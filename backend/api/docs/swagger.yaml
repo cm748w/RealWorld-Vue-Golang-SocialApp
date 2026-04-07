@@ -269,6 +269,34 @@ paths:
       summary: comment post
       tags:
       - Posts
+  /posts/{id}/likePost:
+    patch:
+      consumes:
+      - application/json
+      description: like or dislike a post by it's id
+      parameters:
+      - description: Post id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PostModel'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: like or do not like post
+      tags:
+      - Posts
   /posts/search:
     get:
       consumes:

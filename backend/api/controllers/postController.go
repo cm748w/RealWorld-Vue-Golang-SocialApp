@@ -502,3 +502,75 @@ func CommentPost(c *fiber.Ctx) error {
 		"data": post,
 	})
 }
+
+// Like Post
+// @Summary Toggle like on post
+// @Description Adds current user to likes if absent, otherwise removes it.
+// @Tags Posts
+// @Accept json
+// @Produce json
+// @Param id path string true "Post ObjectID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /posts/{id}/likePost [patch]
+func LikePost(c *fiber.Ctx) error {
+
+	var PostSchema = database.DB.Collection("posts")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	postid, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"details": "invalid post id",
+		})
+	}
+
+	userID, errb := c.Locals("userId").(string)
+	if !errb {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"details": "You are not authorized",
+		})
+	}
+
+	var post models.PostModel
+	pipeline := mongo.Pipeline{
+		{{Key: "$set", Value: bson.M{
+			"likes": bson.M{
+				"$cond": bson.A{
+					bson.M{"$in": bson.A{userID, "$likes"}},
+					bson.M{
+						"$filter": bson.M{
+							"input": "$likes",
+							"as":    "likeUserId",
+							"cond":  bson.M{"$ne": bson.A{"$$likeUserId", userID}},
+						},
+					},
+					bson.M{"$concatArrays": bson.A{"$likes", bson.A{userID}}},
+				},
+			},
+		}}},
+	}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	err = PostSchema.FindOneAndUpdate(ctx, bson.M{"_id": postid}, pipeline, opts).Decode(&post)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"details": "post not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"details": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"post": post,
+	})
+
+}
