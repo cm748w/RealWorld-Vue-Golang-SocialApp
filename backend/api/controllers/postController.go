@@ -350,3 +350,155 @@ func GetAllPosts(c *fiber.Ctx) error {
 		"numberOfPages": (total + int64(limit) - 1) / int64(limit),
 	})
 }
+
+// GetPostsUsersBySearch
+// @Summary get posts users by search
+// @Description get posts users maching the search query
+// @Tags Posts
+// @Accept json
+// @Produce json
+// @Param searchQuery query string true "search query"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /posts/search [get]
+func GetPostsUsersBySearch(c *fiber.Ctx) error {
+
+	var PostSchema = database.DB.Collection("posts")
+	var userSchema = database.DB.Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var users []models.UserModel
+	var posts []models.PostModel
+
+	//
+	filterPost := bson.M{}
+	filterUser := bson.M{}
+
+	//
+	findOptionsPost := options.Find()
+	findOptionsUser := options.Find()
+
+	if search := c.Query("searchQuery"); search != "" {
+		// post
+		filterPost = bson.M{
+			"$or": []bson.M{
+				{
+					"title": bson.M{
+						"$regex": primitive.Regex{
+							Pattern: search,
+							Options: "i",
+						},
+					},
+				},
+				{
+					"message": bson.M{
+						"$regex": primitive.Regex{
+							Pattern: search,
+							Options: "i",
+						},
+					},
+				},
+			},
+		}
+		//
+		filterUser = bson.M{
+			"$or": []bson.M{
+				{
+					"name": bson.M{
+						"$regex": primitive.Regex{
+							Pattern: search,
+							Options: "i",
+						},
+					},
+				},
+				{
+					"email": bson.M{
+						"$regex": primitive.Regex{
+							Pattern: search,
+							Options: "i",
+						},
+					},
+				},
+			},
+		}
+	}
+	// end
+	cursorPosts, _ := PostSchema.Find(ctx, filterPost, findOptionsPost)
+	defer cursorPosts.Close(ctx)
+
+	cursorUsers, _ := userSchema.Find(ctx, filterUser, findOptionsUser)
+	defer cursorUsers.Close(ctx)
+	//
+
+	for cursorUsers.Next(ctx) {
+		var user models.UserModel
+		cursorUsers.Decode(&user)
+		users = append(users, user)
+	}
+
+	for cursorPosts.Next(ctx) {
+		var post models.PostModel
+		cursorPosts.Decode(&post)
+		posts = append(posts, post)
+
+	}
+
+	return c.JSON(fiber.Map{
+		"user":  users,
+		"posts": posts,
+	})
+}
+
+// Comment Post
+// @Summary comment post
+// @Description comment post
+// @Tags Posts
+// @Accept json
+// @Produce json
+// @Param id path string true "Post id"
+// @Param post body models.CommentPost true "comment value"
+// @Success 200 {object} models.PostModel
+// @Failure 400 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /posts/{id}/commentPost [post]
+func CommentPost(c *fiber.Ctx) error {
+
+	var PostSchema = database.DB.Collection("posts")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var b models.CommentPost
+	if err := c.BodyParser(&b); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "Invalid request body",
+			"details": err.Error(),
+		})
+	}
+
+	postid, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"details": err.Error(),
+		})
+	}
+
+	var post models.PostModel
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	err = PostSchema.FindOneAndUpdate(ctx,
+		bson.M{"_id": postid},
+		bson.M{"$push": bson.M{"comments": b.Value}},
+		opts,
+	).Decode(&post)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"details": err.Error(),
+		})
+	}
+	// TODO create notification start
+	// end
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": post,
+	})
+}

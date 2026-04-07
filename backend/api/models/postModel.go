@@ -19,26 +19,11 @@ type PostModel struct {
 }
 
 type CreateOrUpdatePost struct {
-	Title        string `json:"title" validate:"required"`
-	Message      string `json:"message" validate:"required,min=5"`
-	SelectedFile string `json:"selectedFile,omitempty"`
+	Title        string `json:"title" bson:"title" validate:"required"`
+	Message      string `json:"message" bson:"message" validate:"required,min=5"`
+	SelectedFile string `json:"selectedFile" bson:"selectedFile"`
 }
 
-// // interfaces
-// type CreateUser struct {
-// 	Email     string
-// 	Password  string
-// 	FirstName string
-// 	LastName  string
-// }
-
-// type LoginUser struct {
-// 	Email    string
-// 	Password string
-// }
-
-// type UpdateUser struct {
-// 	Name     string
-// 	ImageUrl string
-// 	Bio      string
-// }
+type CommentPost struct {
+	Value string `json:"value" bson:"value" validate:"required"`
+}
