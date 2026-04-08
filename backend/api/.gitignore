@@ -1,2 +1,2 @@
-/backend/api/go.sum
-/backend/api/.env
+# Local environment variables
+.env
