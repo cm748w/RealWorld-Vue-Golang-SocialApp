@@ -10,3 +10,9 @@ type Message struct {
 	Sender  string             `json:"sender" bson:"sender"`
 	Recever string             `json:"recever" bson:"recever"`
 }
+
+type SendMessageM struct {
+	Content string `json:"content" bson:"content" validate:"required,min=5"`
+	Sender  string `json:"sender" bson:"sender" validate:"required"`
+	Recever string `json:"recever" bson:"recever" validate:"required"`
+}
