@@ -29,7 +29,9 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	database.Connect()
+	if err := database.Connect(); err != nil {
+		log.Fatal("failed to connect to database:", err)
+	}
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{

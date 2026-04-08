@@ -24,4 +24,5 @@ func SetupPostRoutes(app *fiber.App) {
 	// like
 	app.Patch("/posts/:id/likePost", middleware.AuthMiddleware, controllers.LikePost)
 	// delete
+	app.Delete("/posts/:id", middleware.AuthMiddleware, controllers.DeletePost)
 }

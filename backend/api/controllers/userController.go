@@ -5,12 +5,12 @@ import (
 	"Server/models"
 	"context"
 	"slices"
-	"sort"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // GetUserBy ID
@@ -44,14 +44,20 @@ func GetUserByID(c *fiber.Ctx) error {
 	// get nuser data
 	userResult := UserSchema.FindOne(ctx, bson.M{"_id": objId})
 
-	if userResult.Err() != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+	if err := userResult.Err(); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"success": false,
 			"message": "User Not found",
 		})
 	}
 
-	userResult.Decode(&user)
+	if err := userResult.Decode(&user); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "failed to load user",
+			"details": err.Error(),
+		})
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"user":  user,
@@ -94,7 +100,7 @@ func UpdateUser(c *fiber.Ctx) error {
 
 	var user models.UpdateUser
 	if err := c.BodyParser(&user); err != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid request body",
 			"details": err.Error(),
 		})
@@ -119,6 +125,10 @@ func UpdateUser(c *fiber.Ctx) error {
 				"details": err.Error(),
 			})
 		}
+	} else {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "user not found",
+		})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": updateUser})
@@ -166,8 +176,20 @@ func FollowingUser(c *fiber.Ctx) error {
 		})
 	}
 
+	if FirstUserID == SecondUserID {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"details": "you cannot follow yourself",
+		})
+	}
+
 	err = UserSchema.FindOne(ctx, bson.M{"_id": FirstUserID}).Decode(&FirstUser)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"details": "target user not found",
+			})
+		}
+
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"details": err.Error(),
 		})
@@ -176,6 +198,12 @@ func FollowingUser(c *fiber.Ctx) error {
 	err = UserSchema.FindOne(ctx, bson.M{"_id": SecondUserID}).Decode(&SecondUser)
 
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"details": "auth user not found",
+			})
+		}
+
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"details": err.Error(),
 		})
@@ -184,11 +212,13 @@ func FollowingUser(c *fiber.Ctx) error {
 	fuid := c.Params("id")
 
 	if slices.Contains(FirstUser.Followers, suid) {
-		i := sort.SearchStrings(FirstUser.Followers, suid)
-		FirstUser.Followers = slices.Delete(FirstUser.Followers, i, i+1)
+		if i := slices.Index(FirstUser.Followers, suid); i >= 0 {
+			FirstUser.Followers = slices.Delete(FirstUser.Followers, i, i+1)
+		}
 		// remove from the following list on second user
-		index := sort.SearchStrings(SecondUser.Following, fuid)
-		SecondUser.Following = slices.Delete(SecondUser.Following, index, index+1)
+		if index := slices.Index(SecondUser.Following, fuid); index >= 0 {
+			SecondUser.Following = slices.Delete(SecondUser.Following, index, index+1)
+		}
 	} else {
 		FirstUser.Followers = append(FirstUser.Followers, suid)
 		SecondUser.Following = append(SecondUser.Following, fuid)
@@ -270,6 +300,12 @@ func GetSugUser(c *fiber.Ctx) error {
 
 	err = UserSchema.FindOne(ctx, bson.M{"_id": MainUserID}).Decode(&MainUser)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"details": "main user not found",
+			})
+		}
+
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"details": err.Error(),
 		})
@@ -294,6 +330,10 @@ func GetSugUser(c *fiber.Ctx) error {
 
 		err = UserSchema.FindOne(ctx, bson.M{"_id": convFID}).Decode(&singleUser)
 		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				continue
+			}
+
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"details": err.Error(),
 			})
