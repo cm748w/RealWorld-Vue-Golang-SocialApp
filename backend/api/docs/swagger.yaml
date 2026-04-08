@@ -38,6 +38,17 @@ definitions:
       password:
         type: string
     type: object
+  models.Message:
+    properties:
+      _id:
+        type: string
+      content:
+        type: string
+      recever:
+        type: string
+      sender:
+        type: string
+    type: object
   models.PostModel:
     properties:
       _id:
@@ -66,6 +77,20 @@ definitions:
     required:
     - message
     - title
+    type: object
+  models.SendMessageM:
+    properties:
+      content:
+        minLength: 5
+        type: string
+      recever:
+        type: string
+      sender:
+        type: string
+    required:
+    - content
+    - recever
+    - sender
     type: object
   models.UpdateUser:
     properties:
@@ -110,6 +135,33 @@ info:
   title: Fiber Golang Mongo Grpc Websocet etc..
   version: "1.0"
 paths:
+  /chat/sendmessage:
+    post:
+      consumes:
+      - application/json
+      description: Send message from one user to another
+      parameters:
+      - description: user SendMessage details
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/models.SendMessageM'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Message'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Send message to friend user
+      tags:
+      - Chat
   /posts:
     get:
       consumes:
@@ -514,8 +566,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             $ref: '#/definitions/models.UserModel'
         "400":

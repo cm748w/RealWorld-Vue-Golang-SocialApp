@@ -21,7 +21,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param user body models.CreateUser true "user register details"
-// @Success 201 {object} models.UserModel
+// @Success 200 {object} models.UserModel
 // @Failure 400 {object} map[string]interface{}
 // @Router /user/signup [post]
 func Register(c *fiber.Ctx) error {
