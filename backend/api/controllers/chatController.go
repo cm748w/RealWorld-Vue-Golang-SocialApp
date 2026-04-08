@@ -71,6 +71,6 @@ func SendMessage(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Message sent successfully",
-		"result":  msg, // 老外的代码只返回了id！！！
+		"result":  msg,
 	})
 }
