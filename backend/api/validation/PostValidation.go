@@ -17,7 +17,7 @@ func ValidatePost(c *fiber.Ctx) error {
 		return err
 	}
 
-	err := ValidatorUser.Struct(body)
+	err := ValidatorPost.Struct(body)
 	if err != nil {
 		for _, err := range err.(validator.ValidationErrors) {
 			var el models.IError

@@ -574,3 +574,67 @@ func LikePost(c *fiber.Ctx) error {
 	})
 
 }
+
+// Delete Post
+// @Summary Delete post by id
+// @Description Delete post by post id need to privided auth token for post creater
+// @Tags Posts
+// @Accept json
+// @Produce json
+// @Param id path string true "Post id"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /posts/{id} [delete]
+func DeletePost(c *fiber.Ctx) error {
+
+	var PostSchema = database.DB.Collection("posts")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var authPost models.PostModel
+	primID, err := primitive.ObjectIDFromHex(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	err = PostSchema.FindOne(ctx, bson.M{"_id": primID}).Decode(&authPost)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "post not found",
+			})
+		}
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"details": err.Error(),
+		})
+	}
+
+	if authPost.Creator != c.Locals("userId").(string) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "You are not authorized to delete this post",
+		})
+	}
+
+	result, err := PostSchema.DeleteOne(ctx, bson.M{"_id": primID})
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"details": err.Error(),
+		})
+	}
+
+	if result.DeletedCount == 1 {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "post deleted successfully",
+		})
+	}
+
+	return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		"message": "post not found",
+	})
+
+}

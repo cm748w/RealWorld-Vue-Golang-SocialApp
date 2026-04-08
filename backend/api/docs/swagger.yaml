@@ -177,6 +177,34 @@ paths:
       tags:
       - Posts
   /posts/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete post by post id need to privided auth token for post creater
+      parameters:
+      - description: Post id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete post by id
+      tags:
+      - Posts
     get:
       consumes:
       - application/json
@@ -273,9 +301,9 @@ paths:
     patch:
       consumes:
       - application/json
-      description: like or dislike a post by it's id
+      description: Adds current user to likes if absent, otherwise removes it.
       parameters:
-      - description: Post id
+      - description: Post ObjectID
         in: path
         name: id
         required: true
@@ -286,15 +314,31 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.PostModel'
+            additionalProperties: true
+            type: object
         "400":
           description: Bad Request
           schema:
             additionalProperties: true
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
       security:
       - BearerAuth: []
-      summary: like or do not like post
+      summary: Toggle like on post
       tags:
       - Posts
   /posts/search:
