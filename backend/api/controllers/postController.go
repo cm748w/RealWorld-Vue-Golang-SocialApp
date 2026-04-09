@@ -234,7 +234,6 @@ func UpdatePost(c *fiber.Ctx) error {
 // @Param id query string true "user id"
 // @Success 200 {object} []models.PostModel
 // @Failure 400 {object} map[string]interface{}
-// @Security BearerAuth
 // @Router /posts [get]
 func GetAllPosts(c *fiber.Ctx) error {
 
@@ -360,7 +359,6 @@ func GetAllPosts(c *fiber.Ctx) error {
 // @Param searchQuery query string true "search query"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @Security BearerAuth
 // @Router /posts/search [get]
 func GetPostsUsersBySearch(c *fiber.Ctx) error {
 
