@@ -239,3 +239,77 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 		"currentPage": from,
 	})
 }
+
+// GetUserUnreadedMsg 获取未读消息
+// @Summary 获取未读消息
+// @Description 从 Bearer Token 中识别当前用户，返回该用户的未读消息列表与未读总数
+// @Tags Chat
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "messages: 未读消息列表, totalUnreadedMessageCount: 未读总数"
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /chat/get-user-unreadedmsg [get]
+func GetUserUnreadedMsg(c *fiber.Ctx) error {
+
+	var UnReadedMsgSchema = database.DB.Collection("unReadedmessages")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// 0. 校验登录状态
+	currentUserID, ok := c.Locals("userId").(string)
+	if !ok || currentUserID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "User not authenticated",
+		})
+	}
+
+	// 过滤器
+	filter := bson.M{"mainUserid": currentUserID, "isReaded": false}
+
+	// 查询数据库
+	cursor, err := UnReadedMsgSchema.Find(ctx, filter)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to retrieve unreaded messages",
+			"error":   err.Error(),
+		})
+	}
+	defer cursor.Close(ctx)
+	// 遍历游标并构建返回数组
+	var urms []models.UnReadedMsg
+	totalUnreadedMessageCount := 0
+
+	for cursor.Next(ctx) {
+		var urm models.UnReadedMsg
+		err := cursor.Decode(&urm)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to decode unreaded messages",
+				"error":   err.Error(),
+			})
+		}
+		if !urm.IsReaded {
+			urms = append(urms, urm)
+		}
+		totalUnreadedMessageCount += urm.NumOfUnreadedMessages
+	}
+
+	if err := cursor.Err(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Database cursor error during iteration",
+			"error":   err.Error(),
+		})
+	}
+
+	if len(urms) == 0 {
+		urms = []models.UnReadedMsg{}
+	}
+
+	// 返回消息列表
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"messages":                  urms,
+		"totalUnreadedMessageCount": totalUnreadedMessageCount,
+	})
+}

@@ -12,6 +12,49 @@
     "host": "localhost:5000",
     "basePath": "/",
     "paths": {
+        "/chat/get-user-unreadedmsg": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "从 Bearer Token 中识别当前用户，返回该用户的未读消息列表与未读总数",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "获取用户未读消息",
+                "responses": {
+                    "200": {
+                        "description": "messages: 未读消息列表, totalUnreadedMessageCount: 未读总数",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/chat/getmsgsbynums": {
             "get": {
                 "security": [
