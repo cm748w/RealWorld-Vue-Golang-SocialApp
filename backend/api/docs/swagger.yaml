@@ -131,27 +131,27 @@ definitions:
 host: localhost:5000
 info:
   contact: {}
-  description: This is Swagger docs for rest api golang fiber
-  title: Fiber Golang Mongo Grpc Websocet etc..
+  description: 这是基于 Golang Fiber 的 REST API Swagger 文档
+  title: Fiber Golang Mongo Grpc Websocket 等服务
   version: "1.0"
 paths:
   /chat/getmsgsbynums:
     get:
       consumes:
       - application/json
-      description: Get messages by number between two users by pagination
+      description: 按页获取两个用户之间的聊天记录
       parameters:
-      - description: Starting point page num
+      - description: 起始页码
         in: query
         name: from
         required: true
         type: integer
-      - description: first user id
+      - description: 第一个用户 ID
         in: query
         name: firstuid
         required: true
         type: string
-      - description: second user id
+      - description: 第二个用户 ID
         in: query
         name: seconduid
         required: true
@@ -172,16 +172,16 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Get messages by pagination
+      summary: 分页获取聊天消息
       tags:
       - Chat
   /chat/sendmessage:
     post:
       consumes:
       - application/json
-      description: Send message from one user to another
+      description: 在两个用户之间发送消息
       parameters:
-      - description: user SendMessage details
+      - description: 消息发送参数
         in: body
         name: message
         required: true
@@ -201,24 +201,24 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Send message to friend user
+      summary: 发送私信
       tags:
       - Chat
   /posts:
     get:
       consumes:
       - application/json
-      description: get all posts with pagination
+      description: 分页获取帖子列表
       parameters:
-      - description: page number
+      - description: 页码
         in: query
         name: page
         type: integer
-      - description: page size
+      - description: 每页数量
         in: query
         name: limit
         type: integer
-      - description: user id
+      - description: 用户 ID
         in: query
         name: id
         required: true
@@ -237,17 +237,15 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      security:
-      - BearerAuth: []
-      summary: get all posts
+      summary: 获取帖子列表
       tags:
       - Posts
     post:
       consumes:
       - application/json
-      description: create new post
+      description: 创建一条新帖子
       parameters:
-      - description: post create details
+      - description: 创建帖子参数
         in: body
         name: post
         required: true
@@ -267,16 +265,16 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: create a new post
+      summary: 创建帖子
       tags:
       - Posts
   /posts/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete post by post id need to privided auth token for post creater
+      description: 按帖子 ID 删除帖子，需提供创建者的认证 Token
       parameters:
-      - description: Post id
+      - description: 帖子 ID
         in: path
         name: id
         required: true
@@ -296,15 +294,15 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Delete post by id
+      summary: 根据 ID 删除帖子
       tags:
       - Posts
     get:
       consumes:
       - application/json
-      description: Get a new post
+      description: 根据帖子 ID 获取帖子详情
       parameters:
-      - description: Post id
+      - description: 帖子 ID
         in: path
         name: id
         required: true
@@ -321,20 +319,20 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Get  a new post
+      summary: 获取单个帖子
       tags:
       - Posts
     patch:
       consumes:
       - application/json
-      description: Update post
+      description: 更新指定 ID 的帖子
       parameters:
-      - description: Post id
+      - description: 帖子 ID
         in: path
         name: id
         required: true
         type: string
-      - description: update post details
+      - description: 更新帖子参数
         in: body
         name: post
         required: true
@@ -354,21 +352,21 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Update post
+      summary: 更新帖子
       tags:
       - Posts
   /posts/{id}/commentPost:
     post:
       consumes:
       - application/json
-      description: comment post
+      description: 对指定帖子新增评论
       parameters:
-      - description: Post id
+      - description: 帖子 ID
         in: path
         name: id
         required: true
         type: string
-      - description: comment value
+      - description: 评论内容
         in: body
         name: post
         required: true
@@ -388,16 +386,16 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: comment post
+      summary: 评论帖子
       tags:
       - Posts
   /posts/{id}/likePost:
     patch:
       consumes:
       - application/json
-      description: Adds current user to likes if absent, otherwise removes it.
+      description: 如果当前用户未点赞则添加，已点赞则移除。
       parameters:
-      - description: Post ObjectID
+      - description: 帖子 ObjectID
         in: path
         name: id
         required: true
@@ -432,16 +430,16 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Toggle like on post
+      summary: 点赞/取消点赞帖子
       tags:
       - Posts
   /posts/search:
     get:
       consumes:
       - application/json
-      description: get posts users maching the search query
+      description: 根据搜索关键字匹配帖子和用户
       parameters:
-      - description: search query
+      - description: 搜索关键词
         in: query
         name: searchQuery
         required: true
@@ -459,18 +457,16 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      security:
-      - BearerAuth: []
-      summary: get posts users by search
+      summary: 按关键字搜索帖子与用户
       tags:
       - Posts
   /user/{id}/following:
     patch:
       consumes:
       - application/json
-      description: follow or  un follow a user
+      description: 对目标用户执行关注或取消关注
       parameters:
-      - description: User ID
+      - description: 用户 ID
         in: path
         name: id
         required: true
@@ -490,14 +486,14 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Follow/UnFollow User
+      summary: 关注/取消关注用户
       tags:
       - Users
   /user/delete:
     delete:
       consumes:
       - application/json
-      description: delete user
+      description: 删除当前登录用户
       produces:
       - application/json
       responses:
@@ -513,14 +509,14 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: delete user
+      summary: 删除用户
       tags:
       - Users
   /user/getSug:
     get:
       consumes:
       - application/json
-      description: get suggested userses based on the current user's following list
+      description: 基于当前用户关注关系获取推荐用户
       produces:
       - application/json
       responses:
@@ -536,16 +532,16 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Get Suggersted users
+      summary: 获取推荐用户
       tags:
       - Users
   /user/getUser/{id}:
     get:
       consumes:
       - application/json
-      description: GetUser Deatils By ID
+      description: 根据用户 ID 获取用户详情
       parameters:
-      - description: User ID
+      - description: 用户 ID
         in: path
         name: id
         required: true
@@ -562,16 +558,16 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Get User By ID
+      summary: 按 ID 获取用户
       tags:
       - Users
   /user/signin:
     post:
       consumes:
       - application/json
-      description: Login an user by providing email, password
+      description: 通过邮箱和密码进行登录
       parameters:
-      - description: user Login details
+      - description: 用户登录信息
         in: body
         name: user
         required: true
@@ -589,17 +585,16 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: login a  user
+      summary: 用户登录
       tags:
       - Authentication
   /user/signup:
     post:
       consumes:
       - application/json
-      description: Register an ew user by providing email, password , first name ,
-        last name
+      description: 通过邮箱、密码、名和姓注册新用户
       parameters:
-      - description: user register details
+      - description: 用户注册信息
         in: body
         name: user
         required: true
@@ -617,16 +612,16 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Gegister a new user
+      summary: 注册新用户
       tags:
       - Authentication
   /user/update:
     patch:
       consumes:
       - application/json
-      description: update user deatils
+      description: 更新当前登录用户资料
       parameters:
-      - description: 'deatils '
+      - description: 用户更新参数
         in: body
         name: user
         required: true
@@ -646,14 +641,14 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: update user data
+      summary: 更新用户资料
       tags:
       - Users
 schemes:
 - http
 securityDefinitions:
   BearerAuth:
-    description: Type "Bearer" followed by a space and the token
+    description: 使用 Bearer 认证，格式为 "Bearer 空格 Token"
     in: header
     name: Authorization
     type: apiKey

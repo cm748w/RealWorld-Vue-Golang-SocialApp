@@ -14,13 +14,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// SendMessage
-// @Summary Send message to friend user
-// @Description Send message from one user to another
+// SendMessage 发送私信
+// @Summary 发送私信
+// @Description 在两个用户之间发送消息
 // @Tags Chat
 // @Accept json
 // @Produce json
-// @Param message body models.SendMessageM true "user SendMessage details"
+// @Param message body models.SendMessageM true "消息发送参数"
 // @Success 201 {object} models.Message
 // @Failure 400 {object} map[string]interface{}
 // @Security BearerAuth
@@ -40,7 +40,7 @@ func SendMessage(c *fiber.Ctx) error {
 		})
 	}
 
-	// Verify sender identity - prevent spoofing
+	// 校验发送者身份，防止冒充
 	currentUserID, ok := c.Locals("userId").(string)
 	if !ok || currentUserID == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -48,7 +48,7 @@ func SendMessage(c *fiber.Ctx) error {
 		})
 	}
 
-	// Ensure sender matches authenticated user
+	// 确保发送者与当前登录用户一致
 	if body.Sender != currentUserID {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "Cannot send messages on behalf of another user",
@@ -61,7 +61,7 @@ func SendMessage(c *fiber.Ctx) error {
 		Sender:  body.Sender,
 		Recever: body.Recever,
 	}
-	// save the message to db
+	// 将消息写入数据库
 	result, err := MessageSchema.InsertOne(ctx, &msg)
 	if err != nil {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
@@ -70,7 +70,7 @@ func SendMessage(c *fiber.Ctx) error {
 		})
 	}
 
-	// update or create the unReaded message count and is readed
+	// 更新或创建未读消息计数
 	var unReadedMsg models.UnReadedMsg
 	filter := bson.M{"mainUserid": msg.Recever, "otherUserid": msg.Sender}
 	update := bson.M{"$inc": bson.M{"numOfUnreadedMessages": 1}, "$set": bson.M{"isReaded": false}}
@@ -92,15 +92,15 @@ func SendMessage(c *fiber.Ctx) error {
 	})
 }
 
-// GetMsgsByNums
-// @Summary Get messages by pagination
-// @Description Get messages by number between two users by pagination
+// GetMsgsByNums 分页获取消息
+// @Summary 分页获取聊天消息
+// @Description 按页获取两个用户之间的聊天记录
 // @Tags Chat
 // @Accept json
 // @Produce json
-// @Param from query int true "Starting point page num"
-// @Param firstuid query string true "first user id"
-// @Param seconduid query string true "second user id"
+// @Param from query int true "起始页码"
+// @Param firstuid query string true "第一个用户 ID"
+// @Param seconduid query string true "第二个用户 ID"
 // @Success 200 {object} []models.Message
 // @Failure 400 {object} map[string]interface{}
 // @Security BearerAuth
@@ -111,8 +111,8 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// ===== VALIDATION =====
-	// 1. Validate 'from' parameter - prevent DoS via large skip values
+	// ===== 参数校验 =====
+	// 1. 校验 from 参数，防止大偏移导致的 DoS 压力
 	from, err := strconv.Atoi(c.Query("from"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -125,7 +125,7 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 			"error": "Page number cannot be negative",
 		})
 	}
-	const MAX_PAGE_NUM = 10000 // Prevent DoS: max skip = 10000 * 2 = 20000
+	const MAX_PAGE_NUM = 10000 // 防止 DoS：最大 skip = 10000 * 2 = 20000
 	if from > MAX_PAGE_NUM {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Page number too large",
@@ -133,7 +133,7 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 		})
 	}
 
-	// 2. Validate UIDs - prevent data leakage from empty strings
+	// 2. 校验 UID，防止空字符串导致的数据泄露
 	firstuid := c.Query("firstuid")
 	seconduid := c.Query("seconduid")
 
@@ -143,7 +143,7 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 		})
 	}
 
-	// 3. Validate ObjectID format
+	// 3. 校验 ObjectID 格式
 	_, err = primitive.ObjectIDFromHex(firstuid)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -157,14 +157,14 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 		})
 	}
 
-	// 4. Prevent querying same user with themselves (business logic)
+	// 4. 业务校验：不允许查询同一用户自己的会话
 	if firstuid == seconduid {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Cannot query messages with the same user",
 		})
 	}
 
-	// 5. Verify user authentication and authorization
+	// 5. 校验登录状态与访问权限
 	currentUserID, ok := c.Locals("userId").(string)
 	if !ok || currentUserID == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -172,24 +172,24 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 		})
 	}
 
-	// Only allow users to view their own conversations
+	// 仅允许用户访问自己参与的会话
 	if currentUserID != firstuid && currentUserID != seconduid {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "You don't have permission to view these messages",
 		})
 	}
 
-	// construct the filter
+	// 组装查询条件
 	senderFilter := bson.M{"sender": firstuid, "recever": seconduid}
 	receverFilter := bson.M{"sender": seconduid, "recever": firstuid}
 	filter := bson.M{"$or": []bson.M{senderFilter, receverFilter}}
-	// pagination options
+	// 分页参数
 	options := options.Find()
 	options.SetSort(bson.D{{Key: "_id", Value: -1}})
 	options.SetSkip(int64(from * 2))
 	options.SetLimit(2)
 
-	// query the db
+	// 查询数据库
 	cursor, err := MessageSchema.Find(ctx, filter, options)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -199,7 +199,7 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 	}
 	defer cursor.Close(ctx)
 
-	// iterate over the cursor and build the res array
+	// 遍历游标并组装结果数组
 	var messages []models.Message
 	for cursor.Next(ctx) {
 		var msg models.Message
@@ -213,7 +213,7 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 		messages = append(messages, msg)
 	}
 
-	// Check for cursor iteration errors
+	// 检查游标遍历错误
 	if err := cursor.Err(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Database cursor error during iteration",
@@ -221,18 +221,18 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 		})
 	}
 
-	// initialize empty messages array if no results
+	// 无结果时返回空数组
 	if len(messages) == 0 {
 		messages = []models.Message{}
 	} else {
-		// reverse the message array
+		// 反转消息顺序为时间正序
 		for i := 0; i < len(messages)/2; i++ {
 			j := len(messages) - 1 - i
 			messages[i], messages[j] = messages[j], messages[i]
 		}
 	}
 
-	// Return the messages
+	// 返回消息列表
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"msgs":        messages,
 		"count":       len(messages),

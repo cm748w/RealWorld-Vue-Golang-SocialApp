@@ -8,7 +8,7 @@ import (
 )
 
 func SetupAuthRoutes(app *fiber.App) {
-	// auth
+	// 认证相关接口
 	app.Post("/user/signup", validation.ValidateUser, controllers.Register)
 	app.Post("/user/signin", validation.ValidateUser, controllers.Login)
 

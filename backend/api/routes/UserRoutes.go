@@ -10,14 +10,14 @@ import (
 )
 
 func SetupUserRoutes(app *fiber.App) {
-	// auth
+	// 根据 ID 获取用户信息
 	app.Get("/user/getUser/:id", controllers.GetUserByID)
-	// getSug
+	// 获取推荐用户
 	app.Get("/user/getSug", middleware.AuthMiddleware, controllers.GetSugUser)
-	// Update
+	// 更新用户资料
 	app.Patch("/user/update", middleware.AuthMiddleware, controllers.UpdateUser)
-	// following
+	// 关注/取消关注用户
 	app.Patch("/user/:id/following", middleware.AuthMiddleware, controllers.FollowingUser)
-	// delete
+	// 删除当前用户
 	app.Delete("/user/delete", middleware.AuthMiddleware, controllers.DeleteUser)
 }

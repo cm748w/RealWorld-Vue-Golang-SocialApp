@@ -13,18 +13,18 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// @title Fiber Golang Mongo Grpc Websocet etc..
+// @title Fiber Golang Mongo Grpc Websocket 等服务
 // @version 1.0
-// @description This is Swagger docs for rest api golang fiber
+// @description 这是基于 Golang Fiber 的 REST API Swagger 文档
 // @host localhost:5000
 // @BasePath /
 // @schemes http
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
-// @description Type "Bearer" followed by a space and the token
+// @description 使用 Bearer 认证，格式为 "Bearer 空格 Token"
 func main() {
-	// load .env file
+	// 加载 .env 环境变量文件
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -45,12 +45,12 @@ func main() {
 		return c.SendString("Welcome to social app.")
 	})
 
-	// setup routes
+	// 注册路由
 	routes.SetupAuthRoutes(app)
 	routes.SetupUserRoutes(app)
 	routes.SetupPostRoutes(app)
 	routes.SetupChatRoutes(app)
-	// Serve swager doctionation
+	// 提供 Swagger 文档路由
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	app.Listen(":5000")

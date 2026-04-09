@@ -14,13 +14,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Register
-// @Summary Gegister a new user
-// @Description Register an ew user by providing email, password , first name , last name
+// Register 注册用户
+// @Summary 注册新用户
+// @Description 通过邮箱、密码、名和姓注册新用户
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param user body models.CreateUser true "user register details"
+// @Param user body models.CreateUser true "用户注册信息"
 // @Success 200 {object} models.UserModel
 // @Failure 400 {object} map[string]interface{}
 // @Router /user/signup [post]
@@ -49,7 +49,7 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// hashing password
+	// 对密码进行哈希处理
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -73,7 +73,7 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// get the new user
+	// 查询刚创建的用户
 	var createdUser *models.UserModel
 	query := bson.M{"_id": result.InsertedID}
 
@@ -82,7 +82,7 @@ func Register(c *fiber.Ctx) error {
 			"details": err.Error(),
 		})
 	}
-	// create the tocken
+	// 生成 Token
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		Issuer:    createdUser.ID.Hex(),
 		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
@@ -98,13 +98,13 @@ func Register(c *fiber.Ctx) error {
 	})
 }
 
-// Login
-// @Summary login a  user
-// @Description Login an user by providing email, password
+// Login 用户登录
+// @Summary 用户登录
+// @Description 通过邮箱和密码进行登录
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param user body models.LoginUser true "user Login details"
+// @Param user body models.LoginUser true "用户登录信息"
 // @Success 201 {object} models.UserModel
 // @Failure 400 {object} map[string]interface{}
 // @Router /user/signin [post]
@@ -134,7 +134,7 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	// check if we have the same pass or not
+	// 校验密码是否匹配
 	checkPass := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if checkPass != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -142,7 +142,7 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	// create the tocken
+	// 生成 Token
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		Issuer:    user.ID.Hex(),
 		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
