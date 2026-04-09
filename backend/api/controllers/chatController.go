@@ -55,11 +55,28 @@ func SendMessage(c *fiber.Ctx) error {
 		})
 	}
 
+	receiverID := body.Receiver
+	if receiverID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "receiver is required",
+		})
+	}
+	if _, err := primitive.ObjectIDFromHex(receiverID); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid receiver format - must be valid MongoDB ObjectID",
+		})
+	}
+	if receiverID == currentUserID {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Cannot send messages to yourself",
+		})
+	}
+
 	// 从 body 构造 msg
 	msg := models.Message{
-		Content: body.Content,
-		Sender:  body.Sender,
-		Recever: body.Recever,
+		Content:  body.Content,
+		Sender:   body.Sender,
+		Receiver: receiverID,
 	}
 	// 将消息写入数据库
 	result, err := MessageSchema.InsertOne(ctx, &msg)
@@ -72,7 +89,7 @@ func SendMessage(c *fiber.Ctx) error {
 
 	// 更新或创建未读消息计数
 	var unreadMsg models.UnreadMsg
-	filter := bson.M{"mainUserId": msg.Recever, "otherUserId": msg.Sender}
+	filter := bson.M{"mainUserId": msg.Receiver, "otherUserId": msg.Sender}
 	update := bson.M{"$inc": bson.M{"numOfUnreadMessages": 1}, "$set": bson.M{"isRead": false}}
 	opts := options.FindOneAndUpdate().SetUpsert(true)
 	err = unreadMsgSchema.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unreadMsg)
@@ -180,9 +197,9 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 	}
 
 	// 组装查询条件
-	senderFilter := bson.M{"sender": firstuid, "recever": seconduid}
-	receverFilter := bson.M{"sender": seconduid, "recever": firstuid}
-	filter := bson.M{"$or": []bson.M{senderFilter, receverFilter}}
+	senderFilter := bson.M{"sender": firstuid, "receiver": seconduid}
+	receiverFilter := bson.M{"sender": seconduid, "receiver": firstuid}
+	filter := bson.M{"$or": []bson.M{senderFilter, receiverFilter}}
 	// 分页参数
 	options := options.Find()
 	options.SetSort(bson.D{{Key: "_id", Value: -1}})
@@ -311,5 +328,82 @@ func GetUserUnreadMsg(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"messages":                urms,
 		"totalUnreadMessageCount": totalUnreadMessageCount,
+	})
+}
+
+// ReadMsg 读取未读消息
+// @Summary 读取未读消息
+// @Description 把该用户的未读消息变为已读消息
+// @Tags Chat
+// @Accept json
+// @Produce json
+// @Param otheruid query string true "其他用户ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Security BearerAuth
+// @Router /chat/read-msg [patch]
+func ReadMsg(c *fiber.Ctx) error {
+
+	var unreadMsgSchema = database.DB.Collection("unreadmessages")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	currentUserID, ok := c.Locals("userId").(string)
+	if !ok || currentUserID == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "User not authenticated",
+		})
+	}
+
+	otheruid := c.Query("otheruid")
+	if otheruid == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "otheruid is required",
+		})
+	}
+	if _, err := primitive.ObjectIDFromHex(otheruid); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid otheruid format - must be valid MongoDB ObjectID",
+		})
+	}
+	if _, err := primitive.ObjectIDFromHex(currentUserID); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid authenticated user id format",
+		})
+	}
+	if otheruid == currentUserID {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Cannot mark your own thread as read",
+		})
+	}
+
+	// 过滤器
+	filter := bson.M{"mainUserId": currentUserID, "otherUserId": otheruid, "isRead": false}
+
+	update := bson.M{"$set": bson.M{"isRead": true, "numOfUnreadMessages": 0}}
+
+	// 更新文档
+	findOneAndUpdateOpts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var updatedDoc bson.M
+	err := unreadMsgSchema.FindOneAndUpdate(ctx, filter, update, findOneAndUpdateOpts).Decode(&updatedDoc)
+	if err == mongo.ErrNoDocuments {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message":  "No unread message to mark",
+			"isMarked": false,
+		})
+	}
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to update unread message",
+			"error":   err.Error(),
+		})
+	}
+
+	// 返回更新结果
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":  "Unread message read successfully",
+		"isMarked": true,
 	})
 }
