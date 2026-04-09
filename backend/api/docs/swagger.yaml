@@ -44,7 +44,7 @@ definitions:
         type: string
       content:
         type: string
-      recever:
+      receiver:
         type: string
       sender:
         type: string
@@ -83,13 +83,13 @@ definitions:
       content:
         minLength: 5
         type: string
-      recever:
+      receiver:
         type: string
       sender:
         type: string
     required:
     - content
-    - recever
+    - receiver
     - sender
     type: object
   models.UpdateUser:
@@ -201,6 +201,45 @@ paths:
       security:
       - BearerAuth: []
       summary: 分页获取聊天消息
+      tags:
+      - Chat
+  /chat/read-msg:
+    patch:
+      consumes:
+      - application/json
+      description: 把该用户的未读消息变为已读消息
+      parameters:
+      - description: 其他用户ID
+        in: query
+        name: otheruid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 读取未读消息
       tags:
       - Chat
   /chat/sendmessage:

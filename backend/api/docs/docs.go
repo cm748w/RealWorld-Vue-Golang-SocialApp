@@ -119,6 +119,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/chat/read-msg": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "把该用户的未读消息变为已读消息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "读取未读消息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "其他用户ID",
+                        "name": "otheruid",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/chat/sendmessage": {
             "post": {
                 "security": [
@@ -908,7 +967,7 @@ const docTemplate = `{
                 "content": {
                     "type": "string"
                 },
-                "recever": {
+                "receiver": {
                     "type": "string"
                 },
                 "sender": {
@@ -963,7 +1022,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "content",
-                "recever",
+                "receiver",
                 "sender"
             ],
             "properties": {
@@ -971,7 +1030,7 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 5
                 },
-                "recever": {
+                "receiver": {
                     "type": "string"
                 },
                 "sender": {

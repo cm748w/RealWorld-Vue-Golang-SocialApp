@@ -11,4 +11,6 @@ func SetupChatRoutes(app *fiber.App) {
 	app.Post("/chat/sendmessage", middleware.AuthMiddleware, controllers.SendMessage)
 	app.Get("/chat/getmsgsbynums", middleware.AuthMiddleware, controllers.GetMsgsByNums)
 	app.Get("/chat/get-user-unreadmsg", middleware.AuthMiddleware, controllers.GetUserUnreadMsg)
+	app.Patch("/chat/read-msg", middleware.AuthMiddleware, controllers.ReadMsg)
+
 }
