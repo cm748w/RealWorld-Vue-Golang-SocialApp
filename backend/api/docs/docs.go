@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/chat/get-user-unreadedmsg": {
+        "/chat/get-user-unreadmsg": {
             "get": {
                 "security": [
                     {
@@ -32,10 +32,10 @@ const docTemplate = `{
                 "tags": [
                     "Chat"
                 ],
-                "summary": "获取用户未读消息",
+                "summary": "获取未读消息",
                 "responses": {
                     "200": {
-                        "description": "messages: 未读消息列表, totalUnreadedMessageCount: 未读总数",
+                        "description": "messages: 未读消息列表, totalUnreadMessageCount: 未读总数",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true

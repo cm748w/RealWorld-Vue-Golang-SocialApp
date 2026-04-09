@@ -28,7 +28,7 @@ import (
 func SendMessage(c *fiber.Ctx) error {
 
 	var MessageSchema = database.DB.Collection("messages")
-	var UnReadedMsgSchema = database.DB.Collection("unReadedmessages")
+	var unreadMsgSchema = database.DB.Collection("unreadmessages")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -71,14 +71,14 @@ func SendMessage(c *fiber.Ctx) error {
 	}
 
 	// 更新或创建未读消息计数
-	var unReadedMsg models.UnReadedMsg
-	filter := bson.M{"mainUserid": msg.Recever, "otherUserid": msg.Sender}
-	update := bson.M{"$inc": bson.M{"numOfUnreadedMessages": 1}, "$set": bson.M{"isReaded": false}}
+	var unreadMsg models.UnreadMsg
+	filter := bson.M{"mainUserId": msg.Recever, "otherUserId": msg.Sender}
+	update := bson.M{"$inc": bson.M{"numOfUnreadMessages": 1}, "$set": bson.M{"isRead": false}}
 	opts := options.FindOneAndUpdate().SetUpsert(true)
-	err = UnReadedMsgSchema.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unReadedMsg)
+	err = unreadMsgSchema.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unreadMsg)
 	if err != nil && err != mongo.ErrNoDocuments {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
-			"message": "Failed to update unReaded message",
+			"message": "Failed to update unread message",
 			"details": err.Error(),
 		})
 	}
@@ -240,20 +240,20 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 	})
 }
 
-// GetUserUnreadedMsg 获取未读消息
+// GetUserUnreadMsg 获取未读消息
 // @Summary 获取未读消息
 // @Description 从 Bearer Token 中识别当前用户，返回该用户的未读消息列表与未读总数
 // @Tags Chat
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]interface{} "messages: 未读消息列表, totalUnreadedMessageCount: 未读总数"
+// @Success 200 {object} map[string]interface{} "messages: 未读消息列表, totalUnreadMessageCount: 未读总数"
 // @Failure 401 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
 // @Security BearerAuth
-// @Router /chat/get-user-unreadedmsg [get]
-func GetUserUnreadedMsg(c *fiber.Ctx) error {
+// @Router /chat/get-user-unreadmsg [get]
+func GetUserUnreadMsg(c *fiber.Ctx) error {
 
-	var UnReadedMsgSchema = database.DB.Collection("unReadedmessages")
+	var unreadMsgSchema = database.DB.Collection("unreadmessages")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -266,34 +266,34 @@ func GetUserUnreadedMsg(c *fiber.Ctx) error {
 	}
 
 	// 过滤器
-	filter := bson.M{"mainUserid": currentUserID, "isReaded": false}
+	filter := bson.M{"mainUserId": currentUserID, "isRead": false}
 
 	// 查询数据库
-	cursor, err := UnReadedMsgSchema.Find(ctx, filter)
+	cursor, err := unreadMsgSchema.Find(ctx, filter)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to retrieve unreaded messages",
+			"message": "Failed to retrieve unread messages",
 			"error":   err.Error(),
 		})
 	}
 	defer cursor.Close(ctx)
 	// 遍历游标并构建返回数组
-	var urms []models.UnReadedMsg
-	totalUnreadedMessageCount := 0
+	var urms []models.UnreadMsg
+	totalUnreadMessageCount := 0
 
 	for cursor.Next(ctx) {
-		var urm models.UnReadedMsg
+		var urm models.UnreadMsg
 		err := cursor.Decode(&urm)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"message": "Failed to decode unreaded messages",
+				"message": "Failed to decode unread messages",
 				"error":   err.Error(),
 			})
 		}
-		if !urm.IsReaded {
+		if !urm.IsRead {
 			urms = append(urms, urm)
 		}
-		totalUnreadedMessageCount += urm.NumOfUnreadedMessages
+		totalUnreadMessageCount += urm.NumOfUnreadMessages
 	}
 
 	if err := cursor.Err(); err != nil {
@@ -304,12 +304,12 @@ func GetUserUnreadedMsg(c *fiber.Ctx) error {
 	}
 
 	if len(urms) == 0 {
-		urms = []models.UnReadedMsg{}
+		urms = []models.UnreadMsg{}
 	}
 
 	// 返回消息列表
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"messages":                  urms,
-		"totalUnreadedMessageCount": totalUnreadedMessageCount,
+		"messages":                urms,
+		"totalUnreadMessageCount": totalUnreadMessageCount,
 	})
 }
