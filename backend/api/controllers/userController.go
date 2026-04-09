@@ -74,7 +74,7 @@ func GetUserByID(c *fiber.Ctx) error {
 // @Param user body models.UpdateUser true "deatils "
 // @Success 201 {object} models.UserModel
 // @Failure 400 {object} map[string]interface{}
-// @security BearerAuth
+// @Security BearerAuth
 // @Router /user/update [patch]
 func UpdateUser(c *fiber.Ctx) error {
 
@@ -144,7 +144,7 @@ func UpdateUser(c *fiber.Ctx) error {
 // @Param id path string true "User ID"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @security BearerAuth
+// @Security BearerAuth
 // @Router /user/{id}/following [patch]
 func FollowingUser(c *fiber.Ctx) error {
 
@@ -270,7 +270,7 @@ func FollowingUser(c *fiber.Ctx) error {
 // @Produce json
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @security BearerAuth
+// @Security BearerAuth
 // @Router /user/getSug [get]
 func GetSugUser(c *fiber.Ctx) error {
 
@@ -411,7 +411,7 @@ func GetSugUser(c *fiber.Ctx) error {
 // @Produce json
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
-// @security BearerAuth
+// @Security BearerAuth
 // @Router /user/delete [delete]
 func DeleteUser(c *fiber.Ctx) error {
 

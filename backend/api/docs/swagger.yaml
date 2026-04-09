@@ -135,6 +135,46 @@ info:
   title: Fiber Golang Mongo Grpc Websocet etc..
   version: "1.0"
 paths:
+  /chat/getmsgsbynums:
+    get:
+      consumes:
+      - application/json
+      description: Get messages by number between two users by pagination
+      parameters:
+      - description: Starting point page num
+        in: query
+        name: from
+        required: true
+        type: integer
+      - description: first user id
+        in: query
+        name: firstuid
+        required: true
+        type: string
+      - description: second user id
+        in: query
+        name: seconduid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Message'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get messages by pagination
+      tags:
+      - Chat
   /chat/sendmessage:
     post:
       consumes:
@@ -150,8 +190,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/models.Message'
         "400":
@@ -159,6 +199,8 @@ paths:
           schema:
             additionalProperties: true
             type: object
+      security:
+      - BearerAuth: []
       summary: Send message to friend user
       tags:
       - Chat
