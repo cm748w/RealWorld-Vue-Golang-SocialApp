@@ -9,20 +9,20 @@ import (
 )
 
 func SetupPostRoutes(app *fiber.App) {
-	// create
+	// 创建帖子
 	app.Post("/posts", middleware.AuthMiddleware, validation.ValidatePost, controllers.CreatePost)
-	// getall
+	// 获取帖子列表
 	app.Get("/posts", controllers.GetAllPosts)
-	// search
+	// 搜索帖子和用户
 	app.Get("/posts/search", controllers.GetPostsUsersBySearch)
-	// get one
+	// 获取单个帖子
 	app.Get("/posts/:id", controllers.GetPost)
-	// update
+	// 更新帖子
 	app.Patch("/posts/:id", middleware.AuthMiddleware, validation.ValidatePost, controllers.UpdatePost)
-	// comment
+	// 评论帖子
 	app.Post("/posts/:id/commentPost", middleware.AuthMiddleware, controllers.CommentPost)
-	// like
+	// 点赞/取消点赞
 	app.Patch("/posts/:id/likePost", middleware.AuthMiddleware, controllers.LikePost)
-	// delete
+	// 删除帖子
 	app.Delete("/posts/:id", middleware.AuthMiddleware, controllers.DeletePost)
 }

@@ -29,13 +29,13 @@ func getEnvInt(key string, fallback int) int {
 	return parsed
 }
 
-// Create Post
-// @Summary create a new post
-// @Description create new post
+// CreatePost 创建帖子
+// @Summary 创建帖子
+// @Description 创建一条新帖子
 // @Tags Posts
 // @Accept json
 // @Produce json
-// @Param post body models.CreateOrUpdatePost true "post create details"
+// @Param post body models.CreateOrUpdatePost true "创建帖子参数"
 // @Success 200 {object} models.PostModel
 // @Failure 400 {object} map[string]interface{}
 // @Security BearerAuth
@@ -55,7 +55,7 @@ func CreatePost(c *fiber.Ctx) error {
 		})
 	}
 
-	// start set data
+	// 组装帖子数据
 	var post models.PostModel
 	post.Creator = c.Locals("userId").(string)
 	post.Likes = make([]string, 0)
@@ -81,8 +81,8 @@ func CreatePost(c *fiber.Ctx) error {
 	}
 	//
 	post.Name = user.Name
-	// set data end
-	// create post
+	// 数据组装完成
+	// 创建帖子
 	result, err := PostSchema.InsertOne(ctx, &post)
 
 	if err != nil {
@@ -101,13 +101,13 @@ func CreatePost(c *fiber.Ctx) error {
 
 }
 
-// Get Post
-// @Summary Get  a new post
-// @Description Get a new post
+// GetPost 获取帖子
+// @Summary 获取单个帖子
+// @Description 根据帖子 ID 获取帖子详情
 // @Tags Posts
 // @Accept json
 // @Produce json
-// @Param id path string true "Post id"
+// @Param id path string true "帖子 ID"
 // @Success 200 {object} models.PostModel
 // @Failure 400 {object} map[string]interface{}
 // @Router /posts/{id} [get]
@@ -157,14 +157,14 @@ func GetPost(c *fiber.Ctx) error {
 
 }
 
-// Update Post
-// @Summary Update post
-// @Description Update post
+// UpdatePost 更新帖子
+// @Summary 更新帖子
+// @Description 更新指定 ID 的帖子
 // @Tags Posts
 // @Accept json
 // @Produce json
-// @Param id path string true "Post id"
-// @Param post body models.CreateOrUpdatePost true "update post details"
+// @Param id path string true "帖子 ID"
+// @Param post body models.CreateOrUpdatePost true "更新帖子参数"
 // @Success 200 {object} models.PostModel
 // @Failure 400 {object} map[string]interface{}
 // @Security BearerAuth
@@ -182,7 +182,7 @@ func UpdatePost(c *fiber.Ctx) error {
 			"details": err.Error(),
 		})
 	}
-	// authorization start
+	// 权限校验开始
 	var authPost models.PostModel
 	primID, err := primitive.ObjectIDFromHex(c.Params("id"))
 	if err != nil {
@@ -208,11 +208,11 @@ func UpdatePost(c *fiber.Ctx) error {
 		})
 	}
 
-	// set data end
+	// 更新帖子字段
 	authPost.Title = newData.Title
 	authPost.Message = newData.Message
 	authPost.SelectedFile = newData.SelectedFile
-	// create post
+	// 执行更新
 	_, err = PostSchema.UpdateOne(ctx, bson.M{"_id": authPost.ID}, bson.M{"$set": authPost})
 
 	if err != nil {
@@ -223,15 +223,15 @@ func UpdatePost(c *fiber.Ctx) error {
 
 }
 
-// GetAllPosts
-// @Summary get all posts
-// @Description get all posts with pagination
+// GetAllPosts 获取帖子列表
+// @Summary 获取帖子列表
+// @Description 分页获取帖子列表
 // @Tags Posts
 // @Accept json
 // @Produce json
-// @Param page query int false "page number"
-// @Param limit query int false "page size"
-// @Param id query string true "user id"
+// @Param page query int false "页码"
+// @Param limit query int false "每页数量"
+// @Param id query string true "用户 ID"
 // @Success 200 {object} []models.PostModel
 // @Failure 400 {object} map[string]interface{}
 // @Router /posts [get]
@@ -271,7 +271,7 @@ func GetAllPosts(c *fiber.Ctx) error {
 		limit = maxLimit
 	}
 
-	// get user following list ides and add our user id to it
+	// 获取当前用户关注列表，并补上当前用户自身 ID
 	mainUserID, err := primitive.ObjectIDFromHex(userid)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -302,7 +302,7 @@ func GetAllPosts(c *fiber.Ctx) error {
 	findOptions := options.Find()
 	filter := bson.M{"creator": bson.M{"$in": following}}
 
-	// get total num of posts
+	// 统计帖子总数
 	total, err := PostSchema.CountDocuments(ctx, filter)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -314,7 +314,7 @@ func GetAllPosts(c *fiber.Ctx) error {
 	findOptions.SetLimit(int64(limit))
 	findOptions.SetSort(bson.D{{Key: "_id", Value: -1}})
 
-	// start get posts
+	// 查询帖子数据
 	cursor, err := PostSchema.Find(ctx, filter, findOptions)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -350,13 +350,13 @@ func GetAllPosts(c *fiber.Ctx) error {
 	})
 }
 
-// GetPostsUsersBySearch
-// @Summary get posts users by search
-// @Description get posts users maching the search query
+// GetPostsUsersBySearch 搜索帖子与用户
+// @Summary 按关键字搜索帖子与用户
+// @Description 根据搜索关键字匹配帖子和用户
 // @Tags Posts
 // @Accept json
 // @Produce json
-// @Param searchQuery query string true "search query"
+// @Param searchQuery query string true "搜索关键词"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Router /posts/search [get]
@@ -370,16 +370,16 @@ func GetPostsUsersBySearch(c *fiber.Ctx) error {
 	var users []models.UserModel
 	var posts []models.PostModel
 
-	//
+	// 初始化查询条件
 	filterPost := bson.M{}
 	filterUser := bson.M{}
 
-	//
+	// 初始化查询选项
 	findOptionsPost := options.Find()
 	findOptionsUser := options.Find()
 
 	if search := c.Query("searchQuery"); search != "" {
-		// post
+		// 帖子条件
 		filterPost = bson.M{
 			"$or": []bson.M{
 				{
@@ -400,7 +400,7 @@ func GetPostsUsersBySearch(c *fiber.Ctx) error {
 				},
 			},
 		}
-		//
+		// 用户条件
 		filterUser = bson.M{
 			"$or": []bson.M{
 				{
@@ -422,13 +422,13 @@ func GetPostsUsersBySearch(c *fiber.Ctx) error {
 			},
 		}
 	}
-	// end
+	// 执行查询
 	cursorPosts, _ := PostSchema.Find(ctx, filterPost, findOptionsPost)
 	defer cursorPosts.Close(ctx)
 
 	cursorUsers, _ := userSchema.Find(ctx, filterUser, findOptionsUser)
 	defer cursorUsers.Close(ctx)
-	//
+	// 汇总结果
 
 	for cursorUsers.Next(ctx) {
 		var user models.UserModel
@@ -449,14 +449,14 @@ func GetPostsUsersBySearch(c *fiber.Ctx) error {
 	})
 }
 
-// Comment Post
-// @Summary comment post
-// @Description comment post
+// CommentPost 评论帖子
+// @Summary 评论帖子
+// @Description 对指定帖子新增评论
 // @Tags Posts
 // @Accept json
 // @Produce json
-// @Param id path string true "Post id"
-// @Param post body models.CommentPost true "comment value"
+// @Param id path string true "帖子 ID"
+// @Param post body models.CommentPost true "评论内容"
 // @Success 200 {object} models.PostModel
 // @Failure 400 {object} map[string]interface{}
 // @Security BearerAuth
@@ -494,20 +494,19 @@ func CommentPost(c *fiber.Ctx) error {
 			"details": err.Error(),
 		})
 	}
-	// TODO create notification start
-	// end
+	// TODO: 创建评论通知
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": post,
 	})
 }
 
-// Like Post
-// @Summary Toggle like on post
-// @Description Adds current user to likes if absent, otherwise removes it.
+// LikePost 点赞/取消点赞
+// @Summary 点赞/取消点赞帖子
+// @Description 如果当前用户未点赞则添加，已点赞则移除。
 // @Tags Posts
 // @Accept json
 // @Produce json
-// @Param id path string true "Post ObjectID"
+// @Param id path string true "帖子 ObjectID"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
@@ -573,13 +572,13 @@ func LikePost(c *fiber.Ctx) error {
 
 }
 
-// Delete Post
-// @Summary Delete post by id
-// @Description Delete post by post id need to privided auth token for post creater
+// DeletePost 删除帖子
+// @Summary 根据 ID 删除帖子
+// @Description 按帖子 ID 删除帖子，需提供创建者的认证 Token
 // @Tags Posts
 // @Accept json
 // @Produce json
-// @Param id path string true "Post id"
+// @Param id path string true "帖子 ID"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Security BearerAuth

@@ -13,13 +13,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// GetUserBy ID
-// @Summary Get User By ID
-// @Description GetUser Deatils By ID
+// GetUserByID 获取用户信息
+// @Summary 按 ID 获取用户
+// @Description 根据用户 ID 获取用户详情
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param id path string true "User ID"
+// @Param id path string true "用户 ID"
 // @Success 201 {object} models.UserModel
 // @Failure 400 {object} map[string]interface{}
 // @Router /user/getUser/{id} [get]
@@ -39,9 +39,9 @@ func GetUserByID(c *fiber.Ctx) error {
 		})
 	}
 	// strID := c.Params("id")
-	// TODO GET and REturn user posts
+	// TODO: 获取并返回该用户的帖子
 
-	// get nuser data
+	// 查询用户数据
 	userResult := UserSchema.FindOne(ctx, bson.M{"_id": objId})
 
 	if err := userResult.Err(); err != nil {
@@ -65,13 +65,13 @@ func GetUserByID(c *fiber.Ctx) error {
 	})
 }
 
-// UpdateUser
-// @Summary update user data
-// @Description update user deatils
+// UpdateUser 更新用户信息
+// @Summary 更新用户资料
+// @Description 更新当前登录用户资料
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param user body models.UpdateUser true "deatils "
+// @Param user body models.UpdateUser true "用户更新参数"
 // @Success 201 {object} models.UserModel
 // @Failure 400 {object} map[string]interface{}
 // @Security BearerAuth
@@ -117,7 +117,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 	//
-	var updateUser models.UserModel // 老外写的是 updateUsser ,太抽象了 ，实在不能跟着写
+	var updateUser models.UserModel // 原变量名写错，这里使用更清晰的命名
 	if result.MatchedCount == 1 {
 		err := UserSchema.FindOne(ctx, bson.M{"_id": userid}).Decode(&updateUser)
 		if err != nil {
@@ -135,13 +135,13 @@ func UpdateUser(c *fiber.Ctx) error {
 
 }
 
-// Following Users
-// @Summary Follow/UnFollow User
-// @Description follow or  un follow a user
+// FollowingUser 关注/取消关注用户
+// @Summary 关注/取消关注用户
+// @Description 对目标用户执行关注或取消关注
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param id path string true "User ID"
+// @Param id path string true "用户 ID"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Security BearerAuth
@@ -215,7 +215,7 @@ func FollowingUser(c *fiber.Ctx) error {
 		if i := slices.Index(FirstUser.Followers, suid); i >= 0 {
 			FirstUser.Followers = slices.Delete(FirstUser.Followers, i, i+1)
 		}
-		// remove from the following list on second user
+		// 从当前用户的 following 列表中移除
 		if index := slices.Index(SecondUser.Following, fuid); index >= 0 {
 			SecondUser.Following = slices.Delete(SecondUser.Following, index, index+1)
 		}
@@ -223,7 +223,7 @@ func FollowingUser(c *fiber.Ctx) error {
 		FirstUser.Followers = append(FirstUser.Followers, suid)
 		SecondUser.Following = append(SecondUser.Following, fuid)
 
-		// TODO :: Create Notification
+		// TODO: 创建关注通知
 	}
 
 	updateFirst := bson.M{"followers": FirstUser.Followers}
@@ -262,9 +262,9 @@ func FollowingUser(c *fiber.Ctx) error {
 
 }
 
-// GetSugUser Users
-// @Summary Get Suggersted users
-// @Description get suggested userses based on the current user's following list
+// GetSugUser 获取推荐用户
+// @Summary 获取推荐用户
+// @Description 基于当前用户关注关系获取推荐用户
 // @Tags Users
 // @Accept json
 // @Produce json
@@ -319,7 +319,7 @@ func GetSugUser(c *fiber.Ctx) error {
 		alreadyFollowing[fid] = struct{}{}
 	}
 
-	// Get SugUsers id then put them in suglistid
+	// 收集推荐用户 ID 列表
 	for _, fidHex := range MainUser.Following {
 		var singleUser models.UserModel
 
@@ -339,7 +339,7 @@ func GetSugUser(c *fiber.Ctx) error {
 			})
 		}
 
-		// following
+		// 从对方的 following 中提取推荐用户
 		for _, idHex := range singleUser.Following {
 			convID, err := primitive.ObjectIDFromHex(idHex)
 			if err != nil {
@@ -356,7 +356,7 @@ func GetSugUser(c *fiber.Ctx) error {
 			}
 		}
 
-		// Followers
+		// 从对方的 followers 中提取推荐用户
 		for _, idHex := range singleUser.Followers {
 			convID, err := primitive.ObjectIDFromHex(idHex)
 			if err != nil {
@@ -374,10 +374,10 @@ func GetSugUser(c *fiber.Ctx) error {
 		}
 	}
 
-	// Gest Sug User by id .
+	// 根据推荐 ID 批量查询用户
 	if len(SugListId) > 0 {
 
-		// fetch all users in one qeery using $in operator
+		// 使用 $in 一次性查询所有推荐用户
 		cursor, err := UserSchema.Find(ctx, bson.M{
 			"_id": bson.M{"$in": SugListId}, // 直接用 SugListId
 		})
@@ -403,9 +403,9 @@ func GetSugUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"users": AllSugUsers})
 }
 
-// DeleteUser
-// @Summary delete user
-// @Description delete user
+// DeleteUser 删除用户
+// @Summary 删除用户
+// @Description 删除当前登录用户
 // @Tags Users
 // @Accept json
 // @Produce json
@@ -452,7 +452,7 @@ func DeleteUser(c *fiber.Ctx) error {
 			"message": "user not found",
 		})
 	}
-	// success
+	// 删除成功
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "User Deleted Successfully",

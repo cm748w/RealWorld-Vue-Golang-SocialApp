@@ -22,7 +22,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get messages by number between two users by pagination",
+                "description": "按页获取两个用户之间的聊天记录",
                 "consumes": [
                     "application/json"
                 ],
@@ -32,25 +32,25 @@ const docTemplate = `{
                 "tags": [
                     "Chat"
                 ],
-                "summary": "Get messages by pagination",
+                "summary": "分页获取聊天消息",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Starting point page num",
+                        "description": "起始页码",
                         "name": "from",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "first user id",
+                        "description": "第一个用户 ID",
                         "name": "firstuid",
                         "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "second user id",
+                        "description": "第二个用户 ID",
                         "name": "seconduid",
                         "in": "query",
                         "required": true
@@ -83,7 +83,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Send message from one user to another",
+                "description": "在两个用户之间发送消息",
                 "consumes": [
                     "application/json"
                 ],
@@ -93,10 +93,10 @@ const docTemplate = `{
                 "tags": [
                     "Chat"
                 ],
-                "summary": "Send message to friend user",
+                "summary": "发送私信",
                 "parameters": [
                     {
-                        "description": "user SendMessage details",
+                        "description": "消息发送参数",
                         "name": "message",
                         "in": "body",
                         "required": true,
@@ -124,12 +124,7 @@ const docTemplate = `{
         },
         "/posts": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "get all posts with pagination",
+                "description": "分页获取帖子列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -139,23 +134,23 @@ const docTemplate = `{
                 "tags": [
                     "Posts"
                 ],
-                "summary": "get all posts",
+                "summary": "获取帖子列表",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "page number",
+                        "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "page size",
+                        "description": "每页数量",
                         "name": "limit",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "user id",
+                        "description": "用户 ID",
                         "name": "id",
                         "in": "query",
                         "required": true
@@ -186,7 +181,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "create new post",
+                "description": "创建一条新帖子",
                 "consumes": [
                     "application/json"
                 ],
@@ -196,10 +191,10 @@ const docTemplate = `{
                 "tags": [
                     "Posts"
                 ],
-                "summary": "create a new post",
+                "summary": "创建帖子",
                 "parameters": [
                     {
-                        "description": "post create details",
+                        "description": "创建帖子参数",
                         "name": "post",
                         "in": "body",
                         "required": true,
@@ -227,12 +222,7 @@ const docTemplate = `{
         },
         "/posts/search": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "get posts users maching the search query",
+                "description": "根据搜索关键字匹配帖子和用户",
                 "consumes": [
                     "application/json"
                 ],
@@ -242,11 +232,11 @@ const docTemplate = `{
                 "tags": [
                     "Posts"
                 ],
-                "summary": "get posts users by search",
+                "summary": "按关键字搜索帖子与用户",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "search query",
+                        "description": "搜索关键词",
                         "name": "searchQuery",
                         "in": "query",
                         "required": true
@@ -272,7 +262,7 @@ const docTemplate = `{
         },
         "/posts/{id}": {
             "get": {
-                "description": "Get a new post",
+                "description": "根据帖子 ID 获取帖子详情",
                 "consumes": [
                     "application/json"
                 ],
@@ -282,11 +272,11 @@ const docTemplate = `{
                 "tags": [
                     "Posts"
                 ],
-                "summary": "Get  a new post",
+                "summary": "获取单个帖子",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Post id",
+                        "description": "帖子 ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -314,7 +304,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete post by post id need to privided auth token for post creater",
+                "description": "按帖子 ID 删除帖子，需提供创建者的认证 Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -324,11 +314,11 @@ const docTemplate = `{
                 "tags": [
                     "Posts"
                 ],
-                "summary": "Delete post by id",
+                "summary": "根据 ID 删除帖子",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Post id",
+                        "description": "帖子 ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -357,7 +347,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update post",
+                "description": "更新指定 ID 的帖子",
                 "consumes": [
                     "application/json"
                 ],
@@ -367,17 +357,17 @@ const docTemplate = `{
                 "tags": [
                     "Posts"
                 ],
-                "summary": "Update post",
+                "summary": "更新帖子",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Post id",
+                        "description": "帖子 ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "update post details",
+                        "description": "更新帖子参数",
                         "name": "post",
                         "in": "body",
                         "required": true,
@@ -410,7 +400,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "comment post",
+                "description": "对指定帖子新增评论",
                 "consumes": [
                     "application/json"
                 ],
@@ -420,17 +410,17 @@ const docTemplate = `{
                 "tags": [
                     "Posts"
                 ],
-                "summary": "comment post",
+                "summary": "评论帖子",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Post id",
+                        "description": "帖子 ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "comment value",
+                        "description": "评论内容",
                         "name": "post",
                         "in": "body",
                         "required": true,
@@ -463,7 +453,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Adds current user to likes if absent, otherwise removes it.",
+                "description": "如果当前用户未点赞则添加，已点赞则移除。",
                 "consumes": [
                     "application/json"
                 ],
@@ -473,11 +463,11 @@ const docTemplate = `{
                 "tags": [
                     "Posts"
                 ],
-                "summary": "Toggle like on post",
+                "summary": "点赞/取消点赞帖子",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Post ObjectID",
+                        "description": "帖子 ObjectID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -529,7 +519,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "delete user",
+                "description": "删除当前登录用户",
                 "consumes": [
                     "application/json"
                 ],
@@ -539,7 +529,7 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "delete user",
+                "summary": "删除用户",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -565,7 +555,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "get suggested userses based on the current user's following list",
+                "description": "基于当前用户关注关系获取推荐用户",
                 "consumes": [
                     "application/json"
                 ],
@@ -575,7 +565,7 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get Suggersted users",
+                "summary": "获取推荐用户",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -596,7 +586,7 @@ const docTemplate = `{
         },
         "/user/getUser/{id}": {
             "get": {
-                "description": "GetUser Deatils By ID",
+                "description": "根据用户 ID 获取用户详情",
                 "consumes": [
                     "application/json"
                 ],
@@ -606,11 +596,11 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get User By ID",
+                "summary": "按 ID 获取用户",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "用户 ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -635,7 +625,7 @@ const docTemplate = `{
         },
         "/user/signin": {
             "post": {
-                "description": "Login an user by providing email, password",
+                "description": "通过邮箱和密码进行登录",
                 "consumes": [
                     "application/json"
                 ],
@@ -645,10 +635,10 @@ const docTemplate = `{
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "login a  user",
+                "summary": "用户登录",
                 "parameters": [
                     {
-                        "description": "user Login details",
+                        "description": "用户登录信息",
                         "name": "user",
                         "in": "body",
                         "required": true,
@@ -676,7 +666,7 @@ const docTemplate = `{
         },
         "/user/signup": {
             "post": {
-                "description": "Register an ew user by providing email, password , first name , last name",
+                "description": "通过邮箱、密码、名和姓注册新用户",
                 "consumes": [
                     "application/json"
                 ],
@@ -686,10 +676,10 @@ const docTemplate = `{
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "Gegister a new user",
+                "summary": "注册新用户",
                 "parameters": [
                     {
-                        "description": "user register details",
+                        "description": "用户注册信息",
                         "name": "user",
                         "in": "body",
                         "required": true,
@@ -722,7 +712,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "update user deatils",
+                "description": "更新当前登录用户资料",
                 "consumes": [
                     "application/json"
                 ],
@@ -732,10 +722,10 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "update user data",
+                "summary": "更新用户资料",
                 "parameters": [
                     {
-                        "description": "deatils ",
+                        "description": "用户更新参数",
                         "name": "user",
                         "in": "body",
                         "required": true,
@@ -768,7 +758,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "follow or  un follow a user",
+                "description": "对目标用户执行关注或取消关注",
                 "consumes": [
                     "application/json"
                 ],
@@ -778,11 +768,11 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Follow/UnFollow User",
+                "summary": "关注/取消关注用户",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "用户 ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1003,7 +993,7 @@ const docTemplate = `{
     },
     "securityDefinitions": {
         "BearerAuth": {
-            "description": "Type \"Bearer\" followed by a space and the token",
+            "description": "使用 Bearer 认证，格式为 \"Bearer 空格 Token\"",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
@@ -1017,8 +1007,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:5000",
 	BasePath:         "/",
 	Schemes:          []string{"http"},
-	Title:            "Fiber Golang Mongo Grpc Websocet etc..",
-	Description:      "This is Swagger docs for rest api golang fiber",
+	Title:            "Fiber Golang Mongo Grpc Websocket 等服务",
+	Description:      "这是基于 Golang Fiber 的 REST API Swagger 文档",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

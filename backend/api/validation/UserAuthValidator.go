@@ -27,6 +27,6 @@ func ValidateUser(c *fiber.Ctx) error {
 		}
 		return c.Status(fiber.StatusBadRequest).JSON(errors)
 	}
-	// ok
+	// 校验通过
 	return c.Next()
 }

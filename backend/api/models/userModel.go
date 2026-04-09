@@ -13,7 +13,7 @@ type UserModel struct {
 	Following []string           `json:"following" bson:"following"`
 }
 
-// interfaces
+// 请求体模型
 type CreateUser struct {
 	Email     string
 	Password  string

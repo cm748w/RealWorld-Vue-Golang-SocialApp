@@ -17,7 +17,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
 		})
 	}
 
-	// Check if the token starts with "Bearer"
+	// 检查 Token 是否以 "Bearer " 开头
 	if !strings.HasPrefix(tok, "Bearer ") {
 		tok = strings.TrimSpace(tok)
 	} else {
