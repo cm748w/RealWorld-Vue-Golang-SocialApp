@@ -135,6 +135,34 @@ info:
   title: Fiber Golang Mongo Grpc Websocket 等服务
   version: "1.0"
 paths:
+  /chat/get-user-unreadedmsg:
+    get:
+      consumes:
+      - application/json
+      description: 从 Bearer Token 中识别当前用户，返回该用户的未读消息列表与未读总数
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'messages: 未读消息列表, totalUnreadedMessageCount: 未读总数'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取用户未读消息
+      tags:
+      - Chat
   /chat/getmsgsbynums:
     get:
       consumes:
