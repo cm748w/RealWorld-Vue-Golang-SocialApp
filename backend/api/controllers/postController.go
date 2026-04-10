@@ -464,6 +464,9 @@ func GetPostsUsersBySearch(c *fiber.Ctx) error {
 func CommentPost(c *fiber.Ctx) error {
 
 	var PostSchema = database.DB.Collection("posts")
+	var UserSchema = database.DB.Collection("users")
+	var NotificationSchema = database.DB.Collection("notifications")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -495,6 +498,35 @@ func CommentPost(c *fiber.Ctx) error {
 		})
 	}
 	// TODO: 创建评论通知
+	userID := c.Locals("userId").(string)
+	objId, _ := primitive.ObjectIDFromHex(userID)
+	var user models.UserModel
+	userResult := UserSchema.FindOne(ctx, bson.M{"_id": objId})
+
+	if userResult.Err() != nil {
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"success": false,
+			"message": "User not found",
+		})
+	}
+
+	userResult.Decode(&user)
+
+	notification := models.Notification{
+		MainUserID: post.Creator,
+		TargetID:   postid.Hex(),
+		Details:    user.Name + " commented on your post",
+		User:       models.User{Name: user.Name, Avatar: user.ImageUrl},
+		CreatedAt:  time.Now(),
+	}
+	_, err = NotificationSchema.InsertOne(ctx, notification)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to create notification",
+			"details": err.Error(),
+		})
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": post,
 	})
@@ -516,56 +548,117 @@ func CommentPost(c *fiber.Ctx) error {
 // @Router /posts/{id}/likePost [patch]
 func LikePost(c *fiber.Ctx) error {
 
-	var PostSchema = database.DB.Collection("posts")
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	// 获取所需的数据库集合
+	var PostSchema = database.DB.Collection("posts")                 // 帖子集合
+	var UserSchema = database.DB.Collection("users")                 // 用户集合
+	var NotificationSchema = database.DB.Collection("notifications") // 通知集合
 
+	// 创建上下文，设置30秒超时，确保操作不会无限期阻塞
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel() // 函数结束时取消上下文，释放资源
+
+	// 解析帖子ID参数，将字符串转换为ObjectID
 	postid, err := primitive.ObjectIDFromHex(c.Params("id"))
 	if err != nil {
+		// 如果ID格式无效，返回400错误
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"details": "invalid post id",
 		})
 	}
 
+	// 从上下文中获取当前用户ID，确保用户已登录
 	userID, errb := c.Locals("userId").(string)
 	if !errb {
+		// 如果用户未认证，返回401错误
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"details": "You are not authorized",
 		})
 	}
 
+	// 用于存储更新后的帖子信息
 	var post models.PostModel
+
+	// 构建更新管道：使用MongoDB聚合操作实现点赞/取消点赞逻辑
+	// 核心逻辑：如果用户已点赞则移除，未点赞则添加
 	pipeline := mongo.Pipeline{
 		{{Key: "$set", Value: bson.M{
 			"likes": bson.M{
 				"$cond": bson.A{
+					// 条件：检查用户ID是否在点赞列表中
 					bson.M{"$in": bson.A{userID, "$likes"}},
+					// 分支1：如果已点赞，则过滤掉该用户ID（取消点赞）
 					bson.M{
 						"$filter": bson.M{
-							"input": "$likes",
-							"as":    "likeUserId",
-							"cond":  bson.M{"$ne": bson.A{"$$likeUserId", userID}},
+							"input": "$likes",                                      // 输入数组
+							"as":    "likeUserId",                                  // 遍历变量名
+							"cond":  bson.M{"$ne": bson.A{"$$likeUserId", userID}}, // 过滤条件：不等于当前用户ID
 						},
 					},
+					// 分支2：如果未点赞，则添加用户ID到点赞列表（添加点赞）
 					bson.M{"$concatArrays": bson.A{"$likes", bson.A{userID}}},
 				},
 			},
 		}}},
 	}
 
+	// 设置更新选项：返回更新后的文档，而不是原始文档
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+	// 执行更新操作：根据帖子ID找到帖子并应用更新管道
 	err = PostSchema.FindOneAndUpdate(ctx, bson.M{"_id": postid}, pipeline, opts).Decode(&post)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
+			// 如果帖子不存在，返回404错误
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"details": "post not found",
 			})
 		}
+		// 其他错误，返回500内部服务器错误
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"details": err.Error(),
 		})
 	}
 
+	// 检查是否需要创建通知
+	// 条件：1. 点赞列表不为空 2. 最后一个点赞是当前用户（说明是刚添加的点赞） 3. 帖子不是自己发的
+	if len(post.Likes) > 0 && post.Likes[len(post.Likes)-1] == userID && post.Creator != userID {
+		// 获取当前用户信息，用于创建通知
+		objId, _ := primitive.ObjectIDFromHex(userID)
+		var user models.UserModel
+		userResult := UserSchema.FindOne(ctx, bson.M{"_id": objId})
+
+		if userResult.Err() != nil {
+			// 如果用户不存在，返回502错误
+			return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+				"success": false,
+				"message": "User not found",
+			})
+		}
+
+		// 解码用户信息
+		userResult.Decode(&user)
+
+		// 创建通知对象
+		notification := models.Notification{
+			MainUserID: post.Creator,                                        // 通知接收者（帖子作者）
+			TargetID:   post.ID.Hex(),                                       // 目标ID（帖子ID）
+			Details:    user.Name + " liked your post",                      // 通知内容
+			User:       models.User{Name: user.Name, Avatar: user.ImageUrl}, // 操作用户信息
+			CreatedAt:  time.Now(),                                          // 通知创建时间
+		}
+
+		// 插入通知到数据库
+		_, err = NotificationSchema.InsertOne(ctx, notification)
+		if err != nil {
+			// 如果创建通知失败，返回500错误
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to create notification",
+				"details": err.Error(),
+			})
+		}
+	}
+
+	// 返回更新后的帖子信息
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"post": post,
 	})
