@@ -3,6 +3,7 @@ definitions:
   models.CommentPost:
     properties:
       value:
+        description: 评论内容，必填
         type: string
     required:
     - value
@@ -10,11 +11,14 @@ definitions:
   models.CreateOrUpdatePost:
     properties:
       message:
+        description: 内容，必填，最少5个字符
         minLength: 5
         type: string
       selectedFile:
+        description: 选中的文件URL
         type: string
       title:
+        description: 标题，必填
         type: string
     required:
     - message
@@ -23,56 +27,84 @@ definitions:
   models.CreateUser:
     properties:
       email:
+        description: 邮箱
         type: string
       firstName:
+        description: 名
         type: string
       lastName:
+        description: 姓
         type: string
       password:
+        description: 密码
+        type: string
+    type: object
+  models.IError:
+    properties:
+      field:
+        description: 错误字段
+        type: string
+      tag:
+        description: 错误标签
         type: string
     type: object
   models.LoginUser:
     properties:
       email:
+        description: 邮箱
         type: string
       password:
+        description: 密码
         type: string
     type: object
   models.Message:
     properties:
       _id:
+        description: 消息ID
         type: string
       content:
+        description: 消息内容
         type: string
       receiver:
+        description: 接收者ID
         type: string
       sender:
+        description: 发送者ID
         type: string
     type: object
   models.PostModel:
     properties:
       _id:
+        description: 帖子ID
         type: string
       comments:
+        description: 评论列表
         items:
           type: string
         type: array
       createdAt:
+        description: 创建时间
         type: string
       creator:
+        description: 创建者ID
         type: string
       likes:
+        description: 点赞列表
         items:
           type: string
         type: array
       message:
+        description: 内容，必填，最少5个字符
         minLength: 5
         type: string
       name:
+        description: 创建者名称
         type: string
       selectedFile:
+        description: 选中的文件URL
         type: string
       title:
+        description: 标题，必填
         type: string
     required:
     - message
@@ -81,11 +113,14 @@ definitions:
   models.SendMessageM:
     properties:
       content:
+        description: 消息内容，必填，最少5个字符
         minLength: 5
         type: string
       receiver:
+        description: 接收者ID，必填
         type: string
       sender:
+        description: 发送者ID，必填
         type: string
     required:
     - content
@@ -95,33 +130,44 @@ definitions:
   models.UpdateUser:
     properties:
       bio:
+        description: 个人简介
         type: string
       imageUrl:
+        description: 头像URL
         type: string
       name:
+        description: 用户名
         type: string
     type: object
   models.UserModel:
     properties:
       _id:
+        description: 用户ID
         type: string
       bio:
+        description: 个人简介
         type: string
       email:
+        description: 邮箱，必填
         type: string
       followers:
+        description: 关注者列表
         items:
           type: string
         type: array
       following:
+        description: 关注列表
         items:
           type: string
         type: array
       imageUrl:
+        description: 头像URL
         type: string
       name:
+        description: 用户名
         type: string
       password:
+        description: 密码，必填，最少5个字符
         minLength: 5
         type: string
     required:
@@ -271,6 +317,43 @@ paths:
       summary: 发送私信
       tags:
       - Chat
+  /database/connect:
+    get:
+      description: 从环境变量获取 MongoDB 连接 URI，连接到 MongoDB 数据库
+      responses:
+        "200":
+          description: 连接成功
+          schema:
+            type: string
+        "500":
+          description: 连接失败
+          schema:
+            type: string
+      summary: 连接到 MongoDB 数据库
+      tags:
+      - Database
+  /middleware/auth:
+    get:
+      consumes:
+      - application/json
+      description: 验证请求中的 JWT 令牌，确保用户已登录
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 认证通过
+          schema:
+            type: string
+        "401":
+          description: 未认证
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: JWT 认证中间件
+      tags:
+      - Middleware
   /notification/{userid}:
     get:
       consumes:
@@ -788,6 +871,62 @@ paths:
       summary: 更新用户资料
       tags:
       - Users
+  /validate/post:
+    post:
+      consumes:
+      - application/json
+      description: 验证帖子数据是否符合要求
+      parameters:
+      - description: 帖子数据
+        in: body
+        name: post
+        required: true
+        schema:
+          $ref: '#/definitions/models.PostModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 验证通过
+          schema:
+            type: string
+        "400":
+          description: 验证失败
+          schema:
+            items:
+              $ref: '#/definitions/models.IError'
+            type: array
+      summary: 验证帖子数据
+      tags:
+      - Validation
+  /validate/user:
+    post:
+      consumes:
+      - application/json
+      description: 验证用户数据是否符合要求
+      parameters:
+      - description: 用户数据
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 验证通过
+          schema:
+            type: string
+        "400":
+          description: 验证失败
+          schema:
+            items:
+              $ref: '#/definitions/models.IError'
+            type: array
+      summary: 验证用户数据
+      tags:
+      - Validation
 schemes:
 - http
 securityDefinitions:
