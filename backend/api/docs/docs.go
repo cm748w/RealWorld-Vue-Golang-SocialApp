@@ -224,6 +224,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/database/connect": {
+            "get": {
+                "description": "从环境变量获取 MongoDB 连接 URI，连接到 MongoDB 数据库",
+                "tags": [
+                    "Database"
+                ],
+                "summary": "连接到 MongoDB 数据库",
+                "responses": {
+                    "200": {
+                        "description": "连接成功",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "连接失败",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/middleware/auth": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "验证请求中的 JWT 令牌，确保用户已登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Middleware"
+                ],
+                "summary": "JWT 认证中间件",
+                "responses": {
+                    "200": {
+                        "description": "认证通过",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/notification/mark-notification-as-readed/{userid}": {
             "patch": {
                 "security": [
@@ -1014,6 +1072,92 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/validate/post": {
+            "post": {
+                "description": "验证帖子数据是否符合要求",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validation"
+                ],
+                "summary": "验证帖子数据",
+                "parameters": [
+                    {
+                        "description": "帖子数据",
+                        "name": "post",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PostModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "验证通过",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "验证失败",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.IError"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/validate/user": {
+            "post": {
+                "description": "验证用户数据是否符合要求",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Validation"
+                ],
+                "summary": "验证用户数据",
+                "parameters": [
+                    {
+                        "description": "用户数据",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UserModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "验证通过",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "验证失败",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.IError"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1024,6 +1168,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "value": {
+                    "description": "评论内容，必填",
                     "type": "string"
                 }
             }
@@ -1036,13 +1181,16 @@ const docTemplate = `{
             ],
             "properties": {
                 "message": {
+                    "description": "内容，必填，最少5个字符",
                     "type": "string",
                     "minLength": 5
                 },
                 "selectedFile": {
+                    "description": "选中的文件URL",
                     "type": "string"
                 },
                 "title": {
+                    "description": "标题，必填",
                     "type": "string"
                 }
             }
@@ -1051,15 +1199,32 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "email": {
+                    "description": "邮箱",
                     "type": "string"
                 },
                 "firstName": {
+                    "description": "名",
                     "type": "string"
                 },
                 "lastName": {
+                    "description": "姓",
                     "type": "string"
                 },
                 "password": {
+                    "description": "密码",
+                    "type": "string"
+                }
+            }
+        },
+        "models.IError": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "description": "错误字段",
+                    "type": "string"
+                },
+                "tag": {
+                    "description": "错误标签",
                     "type": "string"
                 }
             }
@@ -1068,9 +1233,11 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "email": {
+                    "description": "邮箱",
                     "type": "string"
                 },
                 "password": {
+                    "description": "密码",
                     "type": "string"
                 }
             }
@@ -1079,15 +1246,19 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "_id": {
+                    "description": "消息ID",
                     "type": "string"
                 },
                 "content": {
+                    "description": "消息内容",
                     "type": "string"
                 },
                 "receiver": {
+                    "description": "接收者ID",
                     "type": "string"
                 },
                 "sender": {
+                    "description": "发送者ID",
                     "type": "string"
                 }
             }
@@ -1100,37 +1271,46 @@ const docTemplate = `{
             ],
             "properties": {
                 "_id": {
+                    "description": "帖子ID",
                     "type": "string"
                 },
                 "comments": {
+                    "description": "评论列表",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "createdAt": {
+                    "description": "创建时间",
                     "type": "string"
                 },
                 "creator": {
+                    "description": "创建者ID",
                     "type": "string"
                 },
                 "likes": {
+                    "description": "点赞列表",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "message": {
+                    "description": "内容，必填，最少5个字符",
                     "type": "string",
                     "minLength": 5
                 },
                 "name": {
+                    "description": "创建者名称",
                     "type": "string"
                 },
                 "selectedFile": {
+                    "description": "选中的文件URL",
                     "type": "string"
                 },
                 "title": {
+                    "description": "标题，必填",
                     "type": "string"
                 }
             }
@@ -1144,13 +1324,16 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
+                    "description": "消息内容，必填，最少5个字符",
                     "type": "string",
                     "minLength": 5
                 },
                 "receiver": {
+                    "description": "接收者ID，必填",
                     "type": "string"
                 },
                 "sender": {
+                    "description": "发送者ID，必填",
                     "type": "string"
                 }
             }
@@ -1159,12 +1342,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "bio": {
+                    "description": "个人简介",
                     "type": "string"
                 },
                 "imageUrl": {
+                    "description": "头像URL",
                     "type": "string"
                 },
                 "name": {
+                    "description": "用户名",
                     "type": "string"
                 }
             }
@@ -1177,33 +1363,41 @@ const docTemplate = `{
             ],
             "properties": {
                 "_id": {
+                    "description": "用户ID",
                     "type": "string"
                 },
                 "bio": {
+                    "description": "个人简介",
                     "type": "string"
                 },
                 "email": {
+                    "description": "邮箱，必填",
                     "type": "string"
                 },
                 "followers": {
+                    "description": "关注者列表",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "following": {
+                    "description": "关注列表",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "imageUrl": {
+                    "description": "头像URL",
                     "type": "string"
                 },
                 "name": {
+                    "description": "用户名",
                     "type": "string"
                 },
                 "password": {
+                    "description": "密码，必填，最少5个字符",
                     "type": "string",
                     "minLength": 5
                 }
