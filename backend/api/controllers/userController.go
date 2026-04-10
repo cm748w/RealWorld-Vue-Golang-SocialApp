@@ -5,13 +5,46 @@ import (
 	"Server/models"
 	"context"
 	"slices"
+	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+const getUserByIDMaxPage = 1000
+const getUserByIDRateLimit = 30
+const getUserByIDRateWindow = time.Minute
+
+type getUserByIDRateState struct {
+	windowStart time.Time
+	count       int
+}
+
+var getUserByIDRateMu sync.Mutex
+var getUserByIDRateByIP = map[string]*getUserByIDRateState{}
+
+func allowGetUserByID(ip string) bool {
+	getUserByIDRateMu.Lock()
+	defer getUserByIDRateMu.Unlock()
+
+	now := time.Now()
+	state, ok := getUserByIDRateByIP[ip]
+	if !ok || now.Sub(state.windowStart) >= getUserByIDRateWindow {
+		getUserByIDRateByIP[ip] = &getUserByIDRateState{
+			windowStart: now,
+			count:       1,
+		}
+		return true
+	}
+
+	state.count++
+	return state.count <= getUserByIDRateLimit
+}
 
 // GetUserByID 获取用户信息
 // @Summary 按 ID 获取用户
@@ -20,17 +53,34 @@ import (
 // @Accept json
 // @Produce json
 // @Param id path string true "用户 ID"
-// @Success 201 {object} models.UserModel
+// @Param page query int false "页码，默认 1"
+// @Param limit query int false "每页数量，默认 10"
+// @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /user/getUser/{id} [get]
 func GetUserByID(c *fiber.Ctx) error {
+	ip := c.IP()
+	if ip == "" {
+		ip = "unknown"
+	}
+	if !allowGetUserByID(ip) {
+		return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+			"success": false,
+			"message": "Too many requests",
+		})
+	}
 
 	var UserSchema = database.DB.Collection("users")
+	var PostSchema = database.DB.Collection("posts")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	var user models.UserModel
+	var posts []models.PostModel
 
+	// 解析用户 ID
 	objId, err := primitive.ObjectIDFromHex(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -38,12 +88,10 @@ func GetUserByID(c *fiber.Ctx) error {
 			"message": "Invalid User id",
 		})
 	}
-	// strID := c.Params("id")
-	// TODO: 获取并返回该用户的帖子
+	strID := c.Params("id")
 
-	// 查询用户数据
+	// 先查询用户信息，确认用户存在
 	userResult := UserSchema.FindOne(ctx, bson.M{"_id": objId})
-
 	if err := userResult.Err(); err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"success": false,
@@ -59,9 +107,62 @@ func GetUserByID(c *fiber.Ctx) error {
 		})
 	}
 
+	// 解析分页参数
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	if page < 1 {
+		page = 1
+	} else if page > getUserByIDMaxPage {
+		page = getUserByIDMaxPage
+	}
+	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+	if limit < 1 || limit > 50 {
+		limit = 10
+	}
+
+	// 查询用户的帖子，按创建时间倒序排序，并支持分页
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	findOptions.SetSkip(int64((page - 1) * limit))
+	findOptions.SetLimit(int64(limit))
+
+	postResult, err := PostSchema.Find(ctx, bson.M{"creator": strID}, findOptions)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to fetch posts",
+			"details": err.Error(),
+		})
+	}
+
+	defer postResult.Close(ctx)
+	for postResult.Next(ctx) {
+		var singlePost models.PostModel
+		if err := postResult.Decode(&singlePost); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"success": false,
+				"message": "Failed to decode post",
+				"details": err.Error(),
+			})
+		}
+		posts = append(posts, singlePost)
+	}
+
+	if posts == nil {
+		posts = make([]models.PostModel, 0)
+	}
+
+	// 统计帖子总数，用于分页
+	totalPosts, err := PostSchema.CountDocuments(ctx, bson.M{"creator": strID})
+	if err != nil {
+		totalPosts = 0
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"user":  user,
-		"posts": "posts",
+		"user":         user,
+		"posts":        posts,
+		"totalPosts":   totalPosts,
+		"currentPage":  page,
+		"postsPerPage": limit,
 	})
 }
 
@@ -149,6 +250,8 @@ func UpdateUser(c *fiber.Ctx) error {
 func FollowingUser(c *fiber.Ctx) error {
 
 	var UserSchema = database.DB.Collection("users")
+	var NotificationSchema = database.DB.Collection("notifications")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -224,6 +327,20 @@ func FollowingUser(c *fiber.Ctx) error {
 		SecondUser.Following = append(SecondUser.Following, fuid)
 
 		// TODO: 创建关注通知
+		notification := models.Notification{
+			MainUserID: FirstUser.ID.Hex(),
+			TargetID:   SecondUser.ID.Hex(),
+			Details:    SecondUser.Name + " Start Following You!",
+			User:       models.User{Name: SecondUser.Name, Avatar: SecondUser.ImageUrl},
+			CreatedAt:  time.Now(),
+		}
+		_, err = NotificationSchema.InsertOne(ctx, notification)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Fail to create notification document",
+				"error":   err.Error(),
+			})
+		}
 	}
 
 	updateFirst := bson.M{"followers": FirstUser.Followers}
