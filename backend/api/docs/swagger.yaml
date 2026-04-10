@@ -271,6 +271,64 @@ paths:
       summary: 发送私信
       tags:
       - Chat
+  /notification/{userid}:
+    get:
+      consumes:
+      - application/json
+      description: 读取用户的通知
+      parameters:
+      - description: 用户ID
+        in: path
+        name: userid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 读取用户通知
+      tags:
+      - Notifications
+  /notification/mark-notification-as-readed/{userid}:
+    patch:
+      consumes:
+      - application/json
+      description: 标记用户的通知为已读
+      parameters:
+      - description: 用户ID
+        in: path
+        name: userid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 标记通知为已读
+      tags:
+      - Notifications
   /posts:
     get:
       consumes:

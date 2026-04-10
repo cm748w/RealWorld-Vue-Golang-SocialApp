@@ -50,6 +50,8 @@ func main() {
 	routes.SetupUserRoutes(app)
 	routes.SetupPostRoutes(app)
 	routes.SetupChatRoutes(app)
+	routes.SetupNotificationRoutes(app)
+
 	// 提供 Swagger 文档路由
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
