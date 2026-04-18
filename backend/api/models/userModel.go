@@ -7,7 +7,7 @@ type UserModel struct {
 	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`                 // 用户ID
 	Name      string             `json:"name" bson:"name"`                                   // 用户名
 	Email     string             `json:"email" bson:"email" validate:"required"`             // 邮箱，必填
-	Password  string             `json:"password" bson:"password" validate:"required,min=5"` // 密码，必填，最少5个字符
+	Password  string             `json:"password" bson:"password" validate:"required,min=6"` // 密码，必填，最少5个字符
 	ImageUrl  string             `json:"imageUrl" bson:"imageUrl"`                           // 头像URL
 	Bio       string             `json:"bio" bson:"bio"`                                     // 个人简介
 	Followers []string           `json:"followers" bson:"followers"`                         // 关注者列表

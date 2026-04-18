@@ -14,7 +14,8 @@ type Message struct {
 
 // SendMessageM 发送消息请求模型
 type SendMessageM struct {
-	Content  string `json:"content" bson:"content" validate:"required,min=5"` // 消息内容，必填，最少5个字符
-	Sender   string `json:"sender" bson:"sender" validate:"required"`         // 发送者ID，必填
-	Receiver string `json:"receiver" bson:"receiver" validate:"required"`     // 接收者ID，必填
+	// Content  string `json:"content" bson:"content" validate:"required,min=5"` // 消息内容，必填，最少5个字符
+	Content  string `json:"content" bson:"content" validate:"required"`   // 消息内容，必填，删除5个字符限制，减轻前端测试压力
+	Sender   string `json:"sender" bson:"sender" validate:"required"`     // 发送者ID，必填
+	Receiver string `json:"receiver" bson:"receiver" validate:"required"` // 接收者ID，必填
 }
