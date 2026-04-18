@@ -94,7 +94,7 @@ func GetUserNotification(c *fiber.Ctx) error {
 	// 读取路径参数中的用户ID
 	userid := c.Params("userid")
 	if userid == "" {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "userid is required",
 		})
 	}
@@ -129,7 +129,7 @@ func GetUserNotification(c *fiber.Ctx) error {
 
 	if len(notifications) == 0 {
 		// 如果没有通知，返回空数组，避免前端处理空值分支
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"notifications": []models.Notification{},
 		})
 	}
