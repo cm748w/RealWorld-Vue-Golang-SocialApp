@@ -224,64 +224,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/database/connect": {
-            "get": {
-                "description": "从环境变量获取 MongoDB 连接 URI，连接到 MongoDB 数据库",
-                "tags": [
-                    "Database"
-                ],
-                "summary": "连接到 MongoDB 数据库",
-                "responses": {
-                    "200": {
-                        "description": "连接成功",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "连接失败",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/middleware/auth": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "验证请求中的 JWT 令牌，确保用户已登录",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Middleware"
-                ],
-                "summary": "JWT 认证中间件",
-                "responses": {
-                    "200": {
-                        "description": "认证通过",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "401": {
-                        "description": "未认证",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/notification/mark-notification-as-readed/{userid}": {
             "patch": {
                 "security": [
@@ -322,6 +264,35 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/notification/stream/{userid}": {
+            "get": {
+                "description": "建立 SSE 长连接，服务端在用户有新通知时推送事件",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "订阅用户通知事件",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE stream",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -1181,9 +1152,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "message": {
-                    "description": "内容，必填，最少5个字符",
-                    "type": "string",
-                    "minLength": 5
+                    "description": "Message      string ` + "`" + `json:\"message\" bson:\"message\" validate:\"required,min=5\"` + "`" + ` // 内容，必填，最少5个字符",
+                    "type": "string"
                 },
                 "selectedFile": {
                     "description": "选中的文件URL",
@@ -1297,9 +1267,8 @@ const docTemplate = `{
                     }
                 },
                 "message": {
-                    "description": "内容，必填，最少5个字符",
-                    "type": "string",
-                    "minLength": 5
+                    "description": "Message      string             ` + "`" + `json:\"message\" bson:\"message\" validate:\"required,min=5\"` + "`" + ` // 内容，必填，最少5个字符",
+                    "type": "string"
                 },
                 "name": {
                     "description": "创建者名称",
@@ -1324,9 +1293,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "description": "消息内容，必填，最少5个字符",
-                    "type": "string",
-                    "minLength": 5
+                    "description": "Content  string ` + "`" + `json:\"content\" bson:\"content\" validate:\"required,min=5\"` + "`" + ` // 消息内容，必填，最少5个字符",
+                    "type": "string"
                 },
                 "receiver": {
                     "description": "接收者ID，必填",
@@ -1399,7 +1367,7 @@ const docTemplate = `{
                 "password": {
                     "description": "密码，必填，最少5个字符",
                     "type": "string",
-                    "minLength": 5
+                    "minLength": 6
                 }
             }
         }

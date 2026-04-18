@@ -203,8 +203,8 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 	// 分页参数
 	options := options.Find()
 	options.SetSort(bson.D{{Key: "_id", Value: -1}})
-	options.SetSkip(int64(from * 2))
-	options.SetLimit(2)
+	options.SetSkip(int64(from * 10))
+	options.SetLimit(10)
 
 	// 查询数据库
 	cursor, err := MessageSchema.Find(ctx, filter, options)

@@ -8,16 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// AuthMiddleware JWT 认证中间件
-// @Summary JWT 认证中间件
-// @Description 验证请求中的 JWT 令牌，确保用户已登录
-// @Tags Middleware
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {string} string "认证通过"
-// @Failure 401 {object} map[string]interface{} "未认证"
-// @Router /middleware/auth [get]
 func AuthMiddleware(c *fiber.Ctx) error {
 	// 从请求头获取 Authorization 令牌
 	tok := c.Get("Authorization")
