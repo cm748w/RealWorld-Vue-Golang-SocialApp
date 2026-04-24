@@ -33,7 +33,7 @@
                <img :src="GetUserData?.result?.imageUrl">
             </q-avatar>
             <q-avatar size="42px" v-else>
-               <img src="https://cdn-icons-png.flaticon.com/512/3237/3237472.png">
+               <img src="https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center">
             </q-avatar>
             <q-menu>
                <q-list style="min-width: 100px;">
