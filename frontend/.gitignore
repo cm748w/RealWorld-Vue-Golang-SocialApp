@@ -4,9 +4,9 @@ node_modules/
 # production build output
 dist/
 
-# local env files
-.env.local
-.env.*.local
+# # local env files
+# .env.local
+# .env.*.local
 
 # logs
 npm-debug.log*
