@@ -42,7 +42,7 @@ jobs:
             run: |
              echo "Starting backend server.."
              go run main.go &
-             echo &! > backend.pid
+             echo $! > backend.pid
              sleep 10
              echo "backend process started with PIN : $(cat backend.pid)"
             working-directory: ./backend/api
@@ -64,10 +64,10 @@ jobs:
             run: |
                 echo "Starting Frontend application on port 80.."
                 sudo nohup npm run serve > frontend.log 2>&1 &
-                echo $1 > frontend.pid
+                echo $! > frontend.pid
                 sleep 15
                 echo "frontend process started"
-                if pgrep -f "vue-cli-services serve" > /dev/null; then
+                if pgrep -f "vue-cli-service serve" > /dev/null; then
                     echo "Vue clid services is running"
                 else
                     echo "vue cli service not found, checking logs:"
@@ -100,8 +100,8 @@ jobs:
                 if [ -f ./backend/api/backend.pid ]; then
                     kill $(cat ./backend/api/backend.pid) || true
                 fi
-                if [ -f ./frontend/api/frontend.pid ]; then
-                    kill $(cat ./frontend/api/frontend.pid) || true
+                if [ -f ./frontend/frontend.pid ]; then
+                    kill $(cat ./frontend/frontend.pid) || true
                 fi
                 sudo lsof -ti:5000 | xargs -r sudo kill -9 || true
                 sudo lsof -ti:80 | xargs -r sudo kill -9 || true
