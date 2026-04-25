@@ -1,5 +1,3 @@
-# Local environment variables
-.env
 
 # Local build artifacts
 tmp/

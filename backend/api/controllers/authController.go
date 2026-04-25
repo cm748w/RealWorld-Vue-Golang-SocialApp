@@ -21,7 +21,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param user body models.CreateUser true "用户注册信息"
-// @Success 200 {object} models.UserModel
+// @Success 201 {object} models.UserModel
 // @Failure 400 {object} map[string]interface{}
 // @Router /user/signup [post]
 func Register(c *fiber.Ctx) error {
@@ -111,7 +111,7 @@ func Register(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param user body models.LoginUser true "用户登录信息"
-// @Success 201 {object} models.UserModel
+// @Success 200 {object} models.UserModel
 // @Failure 400 {object} map[string]interface{}
 // @Router /user/signin [post]
 func Login(c *fiber.Ctx) error {
