@@ -1,15 +1,17 @@
-version: '3'
 services:
   GolangApiServer:
     image: chenmonkey438/go-app-api
     restart: unless-stopped
     container_name: GolangApiServer
+    environment:
+      - MONGO_URI=mongodb://admin:123456@mongodb:27017/?authSource=admin
     ports:
       - "5000:5000"
     networks:
       - app-network
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
   VueServer:
     image: chenmonkey438/vue-app-fe
     container_name: VueServer
@@ -32,7 +34,13 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=123456
     volumes:
-      - mongo-data:/usr/data/db
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet -u admin -p 123456 --authenticationDatabase admin --eval \"quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     networks:
       - app-network
 
