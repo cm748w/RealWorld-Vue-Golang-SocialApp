@@ -3,8 +3,8 @@ name: Deploy Images To Docker Hub
 on:
     workflow_call:
 env:
-    DOCKER_REPO_BACK_API: "chenmonkey438/go-app-api"
-    DOCKER_REPO_FRONT: "chenmonkey438/vue-app-fe"
+    DOCKER_REPO_BACK_API: "go-app-api"
+    DOCKER_REPO_FRONT: "vue-app-fe"
     DOCKER_TAG: "latest"
 
 jobs:
@@ -16,9 +16,8 @@ jobs:
             - name: docker login
               env:
                   DOCKER_USER: ${{ secrets.DOCKER_USER }}
-                  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-              run: |
-                docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+                  DOCKER_PAT: ${{ secrets.DOCKER_PAT }}
+              run: echo "$DOCKER_PAT" | docker login -u "$DOCKER_USER" --password-stdin
 
             - name: Build backend golang api
               run: docker build . --file backend/api/Dockerfile --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_API:$DOCKER_TAG
