@@ -3,14 +3,19 @@ package main
 import (
 	"Server/database"
 	"Server/routes"
+	"Server/servergrpc"
 	"log"
+	"net"
 
 	_ "Server/docs"
+	pb "Server/protos"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/swagger"
 	"github.com/joho/godotenv"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 // @title Fiber Golang Mongo Grpc Websocket 等服务
@@ -44,6 +49,23 @@ func main() {
 			return true // 允许所有来源的请求
 		},
 	}))
+
+	// Setup Grpc Server
+	lis, err := net.Listen("tcp", ":5001")
+	if err != nil {
+		log.Fatalf("faild to listen : %v", err)
+	}
+
+	grpcServer := grpc.NewServer()
+	pb.RegisterRealtimeChatServiceServer(grpcServer, &servergrpc.Server{})
+	reflection.Register(grpcServer)
+	log.Println("gRPC Server Running on Port 5001")
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("failed to server : %v", err)
+		}
+	}()
+	// end of setup gRPC server
 
 	// 设置根路径的响应
 	app.Get("/", func(c *fiber.Ctx) error {
