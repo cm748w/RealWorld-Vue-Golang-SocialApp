@@ -13,13 +13,10 @@
             </q-input>
          </q-toolbar-title>
 
-         <q-btn round
-            v-show="GetUserData?.result"
-            @click="GoToChat"
-            :icon="chatUnreadCount > 0 ? 'eva-message-square-outline': 'eva-message-square'"
-            :color="chatUnreadCount > 0 ? 'primary' : 'dark'"
-         >
-            <q-badge v-if="chatUnreadCount > 0" color="negative" floating rounded :label="chatUnreadCount"/>
+         <q-btn round v-show="GetUserData?.result" @click="GoToChat"
+            :icon="chatUnreadCount > 0 ? 'eva-message-square-outline' : 'eva-message-square'"
+            :color="chatUnreadCount > 0 ? 'primary' : 'dark'">
+            <q-badge v-if="chatUnreadCount > 0" color="negative" floating rounded :label="chatUnreadCount" />
          </q-btn>
 
          <q-btn round v-show="GetUserData?.result" @click="GoToNotification"
@@ -33,7 +30,8 @@
                <img :src="GetUserData?.result?.imageUrl">
             </q-avatar>
             <q-avatar size="42px" v-else>
-               <img src="https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center">
+               <img
+                  src="https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center">
             </q-avatar>
             <q-menu>
                <q-list style="min-width: 100px;">
@@ -54,12 +52,13 @@
 </template>
 
 <script>
-import { mapGetters, mapMutations, mapActions } from 'vuex';
+import { mapGetters, mapMutations, mapActions, mapState } from 'vuex';
 export default {
    name: 'NavBar',
    data() {
       return {
          notificationNum: 0,
+         unReadedMessages: 0,
          // userData: null,
       }
    },
@@ -69,12 +68,21 @@ export default {
       chatUnreadCount() {
          return this.getUnReadedMsg ? this.getUnReadedMsg() : 0
       },
+      ...mapState(['RealTimeNotify'])
+   },
+   watch: {
+      "RealTimeNotify.notifyideslistNumber": async function () {
+         this.UNreadedNotifyCount()
+      },
+      $route: async function () {
+         this.UNreadedNotifyCount()
+      }
    },
    methods: {
       ...mapMutations("auth", ["SetData"]),
       ...mapActions("auth", ["logout"]),
       ...mapActions(["GetUnReadedNotifyNum", "GetUnreadedMessageNum"]),
-
+      ...mapActions("RealTimeNotify", ["StopConnectionToNotify"]),
       GoSearch(e) {
          console.log("go", e.target.value)
          this.$router.push({ path: `/Search`, query: { search: e.target.value } })
@@ -87,31 +95,35 @@ export default {
       },
       LogUserOut() {
          this.logout();
+         this.StopConnectionToNotify()
          this.$router.push("/Auth");
       },
       GoToNotification() {
          this.$router.push('/Notification')
       },
-      GoToChat(){
+      GoToChat() {
          this.$router.push('/Chat')
+      },
+      async UNreadedNotifyCount() {
+         const userId = this.GetUserData?.result?._id
+         if (!userId) {
+            this.NotifyList = []
+            return
+         }
+         this.NotifyList = await this.GetUnReadedNotifyNum(userId) || []
+         let numofunreadednot = 0
+         this.NotifyList.forEach(el => {
+            if (!el.isRead) {
+               numofunreadednot++
+            }
+         })
+         this.notificationNum = numofunreadednot
       }
    },
    async mounted() {
       this.SetData();
       // get not number
-      const userId = this.GetUserData?.result?._id
-      if (!userId) {
-         this.NotifyList = []
-         return
-      }
-      this.NotifyList = await this.GetUnReadedNotifyNum(userId) || []
-      let numofunreadednot = 0
-      this.NotifyList.forEach(el => {
-         if (!el.isRead) {
-            numofunreadednot++
-         }
-      })
-      this.notificationNum = numofunreadednot
+      await this.UNreadedNotifyCount()
       // get chat messages numbers
       await this.GetUnreadedMessageNum(userId)
    },
