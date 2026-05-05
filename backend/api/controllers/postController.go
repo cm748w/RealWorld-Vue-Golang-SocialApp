@@ -3,6 +3,7 @@ package controllers
 import (
 	"Server/database"
 	"Server/models"
+	"Server/servergrpc"
 	"context"
 	"os"
 	"strconv"
@@ -519,14 +520,19 @@ func CommentPost(c *fiber.Ctx) error {
 		User:       models.User{Name: user.Name, Avatar: user.ImageUrl},
 		CreatedAt:  time.Now(),
 	}
-	_, err = NotificationSchema.InsertOne(ctx, notification)
+	res, err := NotificationSchema.InsertOne(ctx, notification)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to create notification",
 			"details": err.Error(),
 		})
 	}
-
+	// end
+	// set the id failed of the notification object
+	notification.ID = res.InsertedID.(primitive.ObjectID)
+	// call grpc
+	servergrpc.SendNotification(notification)
+	// end call grpc
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": post,
 	})
@@ -648,7 +654,7 @@ func LikePost(c *fiber.Ctx) error {
 		}
 
 		// 插入通知到数据库
-		_, err = NotificationSchema.InsertOne(ctx, notification)
+		res, err := NotificationSchema.InsertOne(ctx, notification)
 		if err != nil {
 			// 如果创建通知失败，返回500错误
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -656,6 +662,12 @@ func LikePost(c *fiber.Ctx) error {
 				"details": err.Error(),
 			})
 		}
+
+		// set the id failed of the notification object
+		notification.ID = res.InsertedID.(primitive.ObjectID)
+		// call grpc
+		servergrpc.SendNotification(notification)
+		// End create notification
 	}
 
 	// 返回更新后的帖子信息

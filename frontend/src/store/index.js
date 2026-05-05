@@ -5,6 +5,7 @@ import posts from './Posts.js'
 import { installProfileSync } from './profileSync.js'
 import NotificationStore from './Notification.js'
 import Chat from './Chat.js'
+import RealTimeNotify from './RealTimeNotify.js'
 const store = createStore({
   modules: {
     auth,
@@ -12,6 +13,7 @@ const store = createStore({
     posts,
     NotificationStore,
     Chat,
+    RealTimeNotify,
   },
 })
 
