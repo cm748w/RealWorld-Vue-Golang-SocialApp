@@ -9,8 +9,8 @@
 </template>
 
 <script>
+import { mapActions, mapMutations, mapGetters } from "vuex"
 import NavBar from './views/NavBar.vue';
-import { mapMutations, mapGetters } from "vuex"
 export default {
   name: "MainLayout",
   data() {
@@ -24,28 +24,32 @@ export default {
   watch: {
     GetUserData(newVal) {
       const isNowAuthed = !!newVal
-      
+
       // 如果从已登录变成未登录（登出了），跳转到登录页
       if (this.wasAuthed && !isNowAuthed) {
         this.$router.push('/Auth')
       }
-      
+
       // 如果从未登录变成已登录（登入成功）且当前在认证页，跳转到首页
       if (!this.wasAuthed && isNowAuthed && this.$route.path === '/Auth') {
         this.$router.push('/')
       }
-      
+
       // 更新登录状态标记
       this.wasAuthed = isNowAuthed
     }
   },
-  methods:{
-    ...mapMutations("auth", ["SetData"])
+  methods: {
+    ...mapMutations("auth", ["SetData"]),
+    ...mapActions("RealTimeNotify", ["connectToNotify","StopConnectionToNotify"]),
   },
-  mounted(){
-    this.SetData();
-    // 应用启动时记录初始登录状态
+  mounted() {
+    this.SetData()
+    this.connectToNotify()
     this.wasAuthed = !!this.GetUserData
+  },
+  beforeUnmount(){
+    this.StopConnectionToNotify()
   },
   components: { NavBar }
 }

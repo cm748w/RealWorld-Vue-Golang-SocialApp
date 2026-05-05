@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
+import { mapGetters, mapActions, mapState } from 'vuex'
 // import { watch } from 'vue'
 
 export default {
@@ -46,6 +46,12 @@ export default {
     data(){
         return {
             NotifyList:[]
+        }
+    },
+    watch: {
+        "RealTimeNotify.notifyidData": async function (notify) {
+            console.log("noty", notify)
+            this.NotifyList.unshift(notify)
         }
     },
     async mounted(){
@@ -68,7 +74,8 @@ export default {
         }, 500)
     },
     computed:{
-        ...mapGetters('auth', ['GetUserData'])
+        ...mapGetters('auth', ['GetUserData']),
+        ...mapState(['RealTimeNotify']),
     },
     methods:{
         ...mapActions(['GetUnReadedNotifyNum', 'MarkNotifyAsReaded']),
