@@ -1,12 +1,12 @@
 <template>
    <q-header class="bg-white text-grey-10" bordered>
-      <q-toolbar class="constrain x">
+      <q-toolbar class="container x">
          <q-btn flat to="/">
             <q-icon left size="3em" name="eva-camera-outline" />
             <q-toolbar-title class="text grand-hotel text-bold">Home</q-toolbar-title>
          </q-btn>
 
-         <q-separator class="large-screen-only" vartical spaces />
+         <q-separator class="large-screen-only" vertical spaces />
 
          <q-toolbar-title class="text-center">
             <q-input bottom-slots class="nuks" label="search" @keyup.enter="GoSearch($event)">
@@ -57,6 +57,7 @@ export default {
    name: 'NavBar',
    data() {
       return {
+         NotifyList: [],  // 加这个
          notificationNum: 0,
          unReadedMessages: 0,
          // userData: null,
@@ -83,6 +84,7 @@ export default {
       ...mapActions("auth", ["logout"]),
       ...mapActions(["GetUnReadedNotifyNum", "GetUnreadedMessageNum"]),
       ...mapActions("RealTimeNotify", ["StopConnectionToNotify"]),
+      ...mapActions(["StopConnectionToChat"]),
       GoSearch(e) {
          console.log("go", e.target.value)
          this.$router.push({ path: `/Search`, query: { search: e.target.value } })
@@ -96,6 +98,7 @@ export default {
       LogUserOut() {
          this.logout();
          this.StopConnectionToNotify()
+         this.StopConnectionToChat()
          this.$router.push("/Auth");
       },
       GoToNotification() {
@@ -125,6 +128,7 @@ export default {
       // get not number
       await this.UNreadedNotifyCount()
       // get chat messages numbers
+      const userId = this.GetUserData?.result?._id
       await this.GetUnreadedMessageNum(userId)
    },
 }
