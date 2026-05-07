@@ -42,14 +42,17 @@ export default {
   methods: {
     ...mapMutations("auth", ["SetData"]),
     ...mapActions("RealTimeNotify", ["connectToNotify","StopConnectionToNotify"]),
+    ...mapActions(["createChatConnection","StopConnectionToChat"]),
   },
   mounted() {
     this.SetData()
     this.connectToNotify()
+    this.createChatConnection()
     this.wasAuthed = !!this.GetUserData
   },
   beforeUnmount(){
     this.StopConnectionToNotify()
+    this.StopConnectionToChat()
   },
   components: { NavBar }
 }

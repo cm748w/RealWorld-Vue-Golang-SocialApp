@@ -39,7 +39,9 @@ const RealTimeNotify = {
 
         async StopConnectionToNotify(context) {
             try {
-                context.ws.disconnect()
+                if (context.state.ws) {  // 添加这行
+                    context.state.ws.close()
+                }
                 context.commit('SET_WS', null)
             } catch (error) {
                 console.log('error', error)
