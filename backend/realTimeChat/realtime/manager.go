@@ -100,14 +100,16 @@ func (cm *ConnectionManager) SendToReceiver(msg Message) { // 发消息
 	cm.lock.Lock()
 	defer cm.lock.Unlock()
 	if conn, ok := cm.connections[msg.Receiver]; ok {
-		err := conn.WriteJSON(msg)
+		// Persist first, then deliver: avoids race where receiver marks as read before unread record exists.
+		err := servegrpc.SendMessageClient(msg.Sender, msg.Receiver, msg.Content)
 		if err != nil {
-			log.Printf("Error Senting message to %s : %v", msg.Receiver, err)
+			log.Printf("Error saving message to gRPC for %s: %v", msg.Receiver, err)
+			return
 		}
-		// Save Message To DB Via GRPC
-		err = servegrpc.SendMessageClient(msg.Sender, msg.Receiver, msg.Content)
+
+		err = conn.WriteJSON(msg)
 		if err != nil {
-			log.Fatalf("error Saving message to gRPC %s :%v", msg.Receiver, err)
+			log.Printf("Error sending message to %s : %v", msg.Receiver, err)
 		}
 	} else {
 		log.Printf("Receiver %s not found ", msg.Receiver)

@@ -7,16 +7,16 @@ const RealTimeChat = {
         NumberOfMessagesReal: 0
     },
     getters: {
-        Getuserid: (state) => () => {
+        Getuserid: (state) => {
             return state.userId
         },
-        GetPrivateMessages: (state) => () => {
+        GetPrivateMessages: (state) => {
             return state.privateMessages
         },
-        GetRealTimeNumberMessages: (state) => () => {
+        GetRealTimeNumberMessages: (state) => {
             return state.NumberOfMessagesReal
         },
-        GetOnlinefriends: (state) => () => {
+        GetOnlinefriends: (state) => {
             return state.onlineFriends
         },
     },

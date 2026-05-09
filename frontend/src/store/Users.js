@@ -41,9 +41,9 @@ const Users = {
         /**
          * 获取推荐用户列表
          * @param {Object} state - Vuex 状态
-         * @returns {Function} - 返回获取推荐用户列表的函数
+         * @returns {Array} - 推荐用户列表
          */
-        GetRecommendedUsers: (state) => () => {
+        GetRecommendedUsers: (state) => {
             return state.recommendedUsers
         },
         /**

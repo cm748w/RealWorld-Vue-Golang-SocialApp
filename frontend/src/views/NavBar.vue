@@ -57,27 +57,38 @@ export default {
    name: 'NavBar',
    data() {
       return {
-         NotifyList: [],  // 加这个
-         notificationNum: 0,
-         unReadedMessages: 0,
          // userData: null,
       }
    },
    computed: {
       ...mapGetters("auth", ["GetUserData"]),
       ...mapGetters(["getUnReadedMsg"]),
+      ...mapGetters("NotificationStore", ["GetUnReadedNotification"]),
       chatUnreadCount() {
-         return this.getUnReadedMsg ? this.getUnReadedMsg() : 0
+         return this.getUnReadedMsg || 0
       },
-      ...mapState(['RealTimeNotify'])
+      notificationNum() {
+         return this.GetUnReadedNotification || 0
+      },
+      ...mapState(['RealTimeNotify', 'RealTimeChat'])
    },
    watch: {
+      GetUserData: {
+         async handler(newVal, oldVal) {
+            const nextUserId = newVal?.result?._id
+            const prevUserId = oldVal?.result?._id
+
+            if (String(nextUserId || '') === String(prevUserId || '')) {
+               return
+            }
+
+            await this.bootstrapUnreadCounts()
+         },
+         immediate: true,
+      },
       "RealTimeNotify.notifyideslistNumber": async function () {
          this.UNreadedNotifyCount()
       },
-      $route: async function () {
-         this.UNreadedNotifyCount()
-      }
    },
    methods: {
       ...mapMutations("auth", ["SetData"]),
@@ -107,29 +118,31 @@ export default {
       GoToChat() {
          this.$router.push('/Chat')
       },
+      async bootstrapUnreadCounts() {
+         await this.UNreadedNotifyCount()
+         await this.unreadMessageCount()
+      },
       async UNreadedNotifyCount() {
          const userId = this.GetUserData?.result?._id
          if (!userId) {
-            this.NotifyList = []
+            this.$store.commit('NotificationStore/updateUnReadedNotification', 0)
             return
          }
-         this.NotifyList = await this.GetUnReadedNotifyNum(userId) || []
-         let numofunreadednot = 0
-         this.NotifyList.forEach(el => {
-            if (!el.isRead) {
-               numofunreadednot++
-            }
-         })
-         this.notificationNum = numofunreadednot
-      }
+         await this.GetUnReadedNotifyNum(userId)
+      },
+      async unreadMessageCount() {
+         const userId = this.GetUserData?.result?._id
+         if (!userId) {
+            this.$store.commit('updateUnreadedMsg', 0)
+            return
+         }
+         const { totalUnreadMessageCount } = await this.GetUnreadedMessageNum(userId)
+         this.$store.commit('updateUnreadedMsg', totalUnreadMessageCount || 0)
+      },
    },
    async mounted() {
       this.SetData();
-      // get not number
-      await this.UNreadedNotifyCount()
-      // get chat messages numbers
-      const userId = this.GetUserData?.result?._id
-      await this.GetUnreadedMessageNum(userId)
+      await this.bootstrapUnreadCounts()
    },
 }
 

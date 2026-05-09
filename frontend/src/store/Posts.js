@@ -13,7 +13,7 @@ const Posts = {
          * @param {Object} state - 状态对象
          * @returns {Function} 返回帖子数据的函数
          */
-        GetPost: (state) => () => {
+        GetPost: (state) => {
             return {...state.post}
         },
         /**
@@ -21,7 +21,7 @@ const Posts = {
          * @param {Object} state - 状态对象
          * @returns {Function} 返回帖子列表数据的函数
          */
-        GetAllPosts: (state) => () => {
+        GetAllPosts: (state) => {
             return {...state.posts}
         },
         /**
@@ -29,7 +29,7 @@ const Posts = {
          * @param {Object} state - 状态对象
          * @returns {Function} 返回搜索结果数据的函数
          */
-        GetSearchData: (state) => () => {
+        GetSearchData: (state) => {
             return {...state.SearchResult}
         },
     },
