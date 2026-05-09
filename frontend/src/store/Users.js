@@ -25,7 +25,9 @@ const Users = {
         // 按 id 缓存用户数据，供多个界面共享
         usersById: {},
         // 推荐用户列表
-        recommendedUsers: []
+        recommendedUsers: [],
+        // 用户的 followers 和 following 列表
+        userFollowersFollowing: []
     },
     getters: {
         /**
@@ -39,27 +41,18 @@ const Users = {
         /**
          * 获取推荐用户列表
          * @param {Object} state - Vuex 状态
-         * @returns {Function} - 返回获取推荐用户列表的函数
+         * @returns {Array} - 推荐用户列表
          */
-        GetRecommendedUsers: (state) => () => {
+        GetRecommendedUsers: (state) => {
             return state.recommendedUsers
         },
-        // TODO: GetUserFollowersFollowing
-        GetUserFollowersFollowing: async () => {
-            const userd = JSON.parse(localStorage.getItem('profile'))
-            var followers = userd.result.followers || []
-            var following = userd.result.following || []
-
-            const combineArray = [...followers, ...following]
-            const uniqueArray = Array.from(new Set(combineArray))
-
-            var userdata = []
-            for(const uid of uniqueArray){
-                const { data } = await api.fetchUserProfile(uid)
-                var user = {"_id": data.user._id, "name": data.user.name, "imageUrl": data.user.imageUrl}
-                userdata.push(user)
-            }
-            return userdata
+        /**
+         * 获取用户的 followers 和 following 列表
+         * @param {Object} state - Vuex 状态
+         * @returns {Array} - followers 和 following 合并的用户列表
+         */
+        GetUserFollowersFollowing: (state) => {
+            return state.userFollowersFollowing
         }
     },
     mutations: {
@@ -102,6 +95,14 @@ const Users = {
                     },
                 }
             }
+        },
+        /**
+         * 设置用户的 followers 和 following 列表
+         * @param {Object} state - Vuex 状态
+         * @param {Array} payload - 合并后的用户列表
+         */
+        SetUserFollowersFollowing(state, payload) {
+            state.userFollowersFollowing = payload || []
         }
     },
     actions: {
@@ -231,6 +232,47 @@ const Users = {
             } catch (error) {
                 console.log(error)
                 return error
+            }
+        },
+        /**
+         * 获取用户的 followers 和 following 列表
+         * @param {Object} context - Vuex 上下文
+         * @returns {Promise<Array>} - followers 和 following 合并后的用户列表
+         */
+        async FetchUserFollowersFollowing({ commit }) {
+            try {
+                const userd = JSON.parse(localStorage.getItem('profile'))
+                if (!userd?.result) {
+                    console.error('User profile not found in localStorage')
+                    return []
+                }
+
+                var followers = userd.result.followers || []
+                var following = userd.result.following || []
+
+                const combineArray = [...followers, ...following]
+                const uniqueArray = Array.from(new Set(combineArray))
+
+                var userdata = []
+                for(const uid of uniqueArray){
+                    try {
+                        const { data } = await api.fetchUserProfile(uid)
+                        var user = {
+                            "_id": data.user._id,
+                            "name": data.user.name,
+                            "imageUrl": data.user.imageUrl
+                        }
+                        userdata.push(user)
+                    } catch (error) {
+                        console.error(`Failed to fetch profile for user ${uid}:`, error)
+                    }
+                }
+                
+                commit('SetUserFollowersFollowing', userdata)
+                return userdata
+            } catch (error) {
+                console.error('Error fetching followers/following:', error)
+                return []
             }
         }
     }
