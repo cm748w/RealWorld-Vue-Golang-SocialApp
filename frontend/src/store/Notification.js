@@ -5,7 +5,7 @@ const NotificationStore = {
 		unReadedNotification: 0
 	},
 	getters: {
-		GetUnReadedNotification: (state) => () => {
+		GetUnReadedNotification: (state) => {
 			return state.unReadedNotification
 		},
 	},
