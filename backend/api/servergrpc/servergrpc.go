@@ -9,6 +9,8 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Server struct {
@@ -85,23 +87,20 @@ func (s *Server) SendMessage(ctx context.Context, req *pb.MessageRequest) (*pb.M
 		return nil, fmt.Errorf("Failed to save message to db")
 	}
 
-	// update unreaded messages
+	// update unreaded messages (atomic upsert)
 	unreadedmessagesSchema := database.DB.Collection("unreadmessages")
-
-	existingRecord := bson.M{}
-	err = unreadedmessagesSchema.FindOneAndUpdate(
-		ctx,
-		bson.M{"mainUserId": req.GetReceiver(), "otherUserId": req.GetSender()},
-		bson.M{"$inc": bson.M{"numOfUnreadMessages": 1}, "$set": bson.M{"isRead": false}},
-	).Decode(&existingRecord)
-
+	filter := bson.M{"mainUserId": req.GetReceiver(), "otherUserId": req.GetSender()}
+	update := bson.M{"$inc": bson.M{"numOfUnreadMessages": 1}, "$set": bson.M{"isRead": false}}
+	_, err = unreadedmessagesSchema.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
 	if err != nil {
-		_, err = unreadedmessagesSchema.InsertOne(
-			ctx,
-			bson.M{"mainUserId": req.GetReceiver(), "otherUserId": req.GetSender(), "numOfUnreadMessages": 1, "isRead": false},
-		)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to update unreaded messages")
+		// In case of duplicate-key race on upsert, retry as normal update.
+		if mongo.IsDuplicateKeyError(err) {
+			_, retryErr := unreadedmessagesSchema.UpdateOne(ctx, filter, update)
+			if retryErr != nil {
+				return nil, fmt.Errorf("Failed to update unreaded messages: %v", retryErr)
+			}
+		} else {
+			return nil, fmt.Errorf("Failed to update unreaded messages: %v", err)
 		}
 	}
 
