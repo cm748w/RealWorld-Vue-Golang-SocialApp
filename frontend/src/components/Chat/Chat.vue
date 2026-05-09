@@ -12,8 +12,8 @@
                             <q-item @click="selectUser(contact)" v-for="contact in contacts" :key="contact._id"
                                 class="q-my-sm" clickable v-ripple>
                                 <q-item-section avatar>
-                                    <q-avatar v-if="!contact.imageUrl" color="primary" text-color="white">
-                                        {{ contact.name[0] }}
+                                    <q-avatar v-if="!contact.imageUrl">
+                                        <img src="https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center" />
                                     </q-avatar>
                                     <q-avatar v-else>
                                         <img :src="contact?.imageUrl" />
@@ -44,7 +44,7 @@
                         <div v-for="msg in messageBetweenUsers" :key="msg._id" style="width: 100%;">
                             <q-chat-message
                                 :name="msg.sender === MainUserData._id ? MainUserData.name : selectedUser.name"
-                                :avatar="msg.sender === MainUserData._id ? MainUserData.imageUrl : selectedUser.imageUrl"
+                                :avatar="msg.sender === MainUserData._id ? (MainUserData.imageUrl || 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center') : (selectedUser.imageUrl || 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center')"
                                 :text="[msg.content]" :sent="msg.sender === MainUserData._id ? true : false" />
                         </div>
                     </div>
