@@ -5,7 +5,7 @@ const Chat = {
         unReadedMsgsNUM: 0
     },
     getters:{
-        getUnReadedMsg: (state)=> ()=>{
+        getUnReadedMsg: (state)=> {
             return state.unReadedMsgsNUM
         }
     },

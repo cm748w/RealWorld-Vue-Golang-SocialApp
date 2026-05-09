@@ -87,17 +87,25 @@ func SendMessage(c *fiber.Ctx) error {
 		})
 	}
 
-	// 更新或创建未读消息计数
-	var unreadMsg models.UnreadMsg
+	// 更新或创建未读消息计数（原子 upsert）
 	filter := bson.M{"mainUserId": msg.Receiver, "otherUserId": msg.Sender}
 	update := bson.M{"$inc": bson.M{"numOfUnreadMessages": 1}, "$set": bson.M{"isRead": false}}
-	opts := options.FindOneAndUpdate().SetUpsert(true)
-	err = unreadMsgSchema.FindOneAndUpdate(ctx, filter, update, opts).Decode(&unreadMsg)
-	if err != nil && err != mongo.ErrNoDocuments {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
-			"message": "Failed to update unread message",
-			"details": err.Error(),
-		})
+	_, err = unreadMsgSchema.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
+	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			_, retryErr := unreadMsgSchema.UpdateOne(ctx, filter, update)
+			if retryErr != nil {
+				return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+					"message": "Failed to update unread message",
+					"details": retryErr.Error(),
+				})
+			}
+		} else {
+			return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+				"message": "Failed to update unread message",
+				"details": err.Error(),
+			})
+		}
 	}
 
 	// 设置 msg 的 ID 并返回完整消息
@@ -384,20 +392,19 @@ func ReadMsg(c *fiber.Ctx) error {
 
 	update := bson.M{"$set": bson.M{"isRead": true, "numOfUnreadMessages": 0}}
 
-	// 更新文档
-	findOneAndUpdateOpts := options.FindOneAndUpdate().SetReturnDocument(options.After)
-	var updatedDoc bson.M
-	err := unreadMsgSchema.FindOneAndUpdate(ctx, filter, update, findOneAndUpdateOpts).Decode(&updatedDoc)
-	if err == mongo.ErrNoDocuments {
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"message":  "No unread message to mark",
-			"isMarked": false,
-		})
-	}
+	// 批量更新，兼容历史重复文档，避免总会残留 1 条未读
+	result, err := unreadMsgSchema.UpdateMany(ctx, filter, update)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to update unread message",
 			"error":   err.Error(),
+		})
+	}
+
+	if result.MatchedCount == 0 {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message":  "No unread message to mark",
+			"isMarked": false,
 		})
 	}
 

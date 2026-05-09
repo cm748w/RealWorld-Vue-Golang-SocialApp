@@ -96,6 +96,14 @@ export default {
             if (this.contacts.length > 0) {
                 if (this.selectedUser && this.selectedUser?._id == message.sender) {
                     this.messageBetweenUsers.push(message)
+                    let unreadSnapshot = 0
+                    this.contacts.forEach((contact) => {
+                        if (String(contact._id) === String(message.sender)) {
+                            unreadSnapshot = Number(contact.unReadedmessage) || 0
+                            contact.unReadedmessage = 0
+                        }
+                    })
+                    this.CallMarkMsgAsReaded(this.selectedUser, unreadSnapshot)
                     setTimeout(() => {
                         this.scrollDownFunction()
                     }, 100)
@@ -105,6 +113,7 @@ export default {
                             contact.unReadedmessage++
                         }
                     })
+                    this.syncGlobalUnreadCount()
                 }
 
             }
@@ -168,20 +177,15 @@ export default {
             if (!container) return
             container.scrollTop = container.scrollHeight
         },
-        async CallMarkMsgAsReaded(user) {
+        async CallMarkMsgAsReaded(user, unreadSnapshot = 0) {
             var mainuid = this.MainUserData._id
             var otheruid = user._id
-            var GetunReadedmessage = 0
 
-            this.contacts.forEach(
-                user => {
-                    if (String(otheruid) == String(user._id)) {
-                        GetunReadedmessage = user.unReadedmessage
-                    }
-                }
-            )
-
-            var data = { mainuid, otheruid, GetunReadedmessage }
+            const data = {
+                mainuid,
+                otheruid,
+                GetunReadedmessage: unreadSnapshot,
+            }
             var { isMarked } = await this.MarkMsgsAsReaded(data)
 
             if (isMarked) {
@@ -190,19 +194,40 @@ export default {
                         user.unReadedmessage = 0
                     }
                 })
+                const unreadPayload = await this.GetUnreadedMessageNum(this.MainUserData._id)
+                const totalUnreadMessageCount = unreadPayload?.totalUnreadMessageCount
+                if (typeof totalUnreadMessageCount === 'number') {
+                    this.$store.commit('updateUnreadedMsg', totalUnreadMessageCount)
+                }
             }
         },
         async GetUnreadedMsgList() {
             if (!this.MainUserData._id) return
             const unreadPayload = await this.GetUnreadedMessageNum(this.MainUserData._id)
             var messages = unreadPayload?.messages || []
+            
+            // 第一步：清零所有联系人的未读数
             this.contacts.forEach(user => {
-                messages.forEach(msg => {
+                user.unReadedmessage = 0
+            })
+            
+            // 第二步：只根据后端返回的消息列表进行更新
+            messages.forEach(msg => {
+                this.contacts.forEach(user => {
                     if (String(msg.otherUserId) == String(user._id)) {
                         user.unReadedmessage = Number(msg.numOfUnreadMessages)
                     }
                 })
             })
+            
+            // 第三步：同步全局未读总数
+            this.syncGlobalUnreadCount()
+        },
+        syncGlobalUnreadCount() {
+            const totalUnread = this.contacts.reduce((sum, contact) => {
+                return sum + (Number(contact.unReadedmessage) || 0)
+            }, 0)
+            this.$store.commit('updateUnreadedMsg', totalUnread)
         },
         async GetUsList() {
             this.contacts = []
@@ -214,7 +239,7 @@ export default {
             this.contacts = (glist || []).map(c => ({
                 ...c,
                 isOnline: !!c.isOnline,
-                unReadedmessage: c.unReadedmessage ? Number(c.unReadedmessage) : 0,
+                unReadedmessage: 0,
             }))
             if (this.contacts.length) {
                 this.GetUnreadedMsgList()
@@ -238,9 +263,19 @@ export default {
             if (Array.isArray(msgs)) {
                 this.messageBetweenUsers.push(...msgs)
             }
+            
+            // 获取该联系人当前的未读数快照，传给标记已读函数
+            let unreadSnapshot = 0
+            this.contacts.forEach((contact) => {
+                if (String(contact._id) === String(user._id)) {
+                    unreadSnapshot = Number(contact.unReadedmessage) || 0
+                }
+            })
+            
             setTimeout(() => {
                 this.scrollDownFunction()
-                this.CallMarkMsgAsReaded(user)
+                this.CallMarkMsgAsReaded(user, unreadSnapshot)
+                this.syncGlobalUnreadCount()
             }, 100)
         },
         async handleSendMessage() {

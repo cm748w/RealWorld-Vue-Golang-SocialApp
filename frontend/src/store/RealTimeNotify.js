@@ -6,7 +6,7 @@ const RealTimeNotify = {
         notifyidData: null,
     },
     getters: {
-        Getnotifyideslist: (state) => () => {
+        Getnotifyideslist: (state) => {
             return state.notifyideslistNumber
         },
     },

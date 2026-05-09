@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -32,5 +33,16 @@ func Connect() error {
 
 	fmt.Println("Connected to MongoDB")
 	DB = Client.Database("social")
+
+	// Enforce one unread counter document per (receiver, sender) pair.
+	unreadCollection := DB.Collection("unreadmessages")
+	_, err = unreadCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "mainUserId", Value: 1}, {Key: "otherUserId", Value: 1}},
+		Options: options.Index().SetUnique(true).SetName("uniq_main_other_unread"),
+	})
+	if err != nil {
+		fmt.Printf("warning: failed to create unreadmessages unique index: %v\n", err)
+	}
+
 	return nil
 }
