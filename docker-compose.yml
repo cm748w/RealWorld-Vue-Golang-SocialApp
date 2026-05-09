@@ -2,14 +2,37 @@ version: '3'
 services:
   GolangApiServer:
     image: chenmonkey438/go-app-api
-    restart: unless-stopped
     container_name: GolangApiServer
+    restart: unless-stopped
     ports:
       - "5000:5000"
     networks:
       - app-network
     depends_on:
       - mongodb
+  GolangChatService:
+    image: chenmonkey438/go-app-chat
+    container_name: GolangChatService
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    networks:
+      - app-network
+    depends_on:
+      - mongodb
+      - GolangApiServer
+  GolangNotifyService:
+    image: chenmonkey438/go-app-notify
+    container_name: GolangNotifyService
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+      - "8090:8090"
+    networks:
+      - app-network
+    depends_on:
+      - mongodb
+      - GolangApiServer
   VueServer:
     image: chenmonkey438/vue-app-fe
     container_name: VueServer
@@ -22,6 +45,8 @@ services:
       - dist:/dist
     depends_on:
       - GolangApiServer
+      - GolangChatService
+      - GolangNotifyService
 
   mongodb:
     container_name: mongodb
@@ -32,7 +57,7 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=123456
     volumes:
-      - mongo-data:/usr/data/db
+      - mongo-data:/data/db
     networks:
       - app-network
 
