@@ -1,12 +1,12 @@
 <template>
    <q-header class="bg-white text-grey-10" bordered>
-      <q-toolbar class="constrain x">
+      <q-toolbar class="container x">
          <q-btn flat to="/">
             <q-icon left size="3em" name="eva-camera-outline" />
             <q-toolbar-title class="text grand-hotel text-bold">Home</q-toolbar-title>
          </q-btn>
 
-         <q-separator class="large-screen-only" vartical spaces />
+         <q-separator class="large-screen-only" vertical spaces />
 
          <q-toolbar-title class="text-center">
             <q-input bottom-slots class="nuks" label="search" @keyup.enter="GoSearch($event)">
@@ -57,32 +57,45 @@ export default {
    name: 'NavBar',
    data() {
       return {
-         notificationNum: 0,
-         unReadedMessages: 0,
          // userData: null,
       }
    },
    computed: {
       ...mapGetters("auth", ["GetUserData"]),
       ...mapGetters(["getUnReadedMsg"]),
+      ...mapGetters("NotificationStore", ["GetUnReadedNotification"]),
       chatUnreadCount() {
-         return this.getUnReadedMsg ? this.getUnReadedMsg() : 0
+         return this.getUnReadedMsg || 0
       },
-      ...mapState(['RealTimeNotify'])
+      notificationNum() {
+         return this.GetUnReadedNotification || 0
+      },
+      ...mapState(['RealTimeNotify', 'RealTimeChat'])
    },
    watch: {
+      GetUserData: {
+         async handler(newVal, oldVal) {
+            const nextUserId = newVal?.result?._id
+            const prevUserId = oldVal?.result?._id
+
+            if (String(nextUserId || '') === String(prevUserId || '')) {
+               return
+            }
+
+            await this.bootstrapUnreadCounts()
+         },
+         immediate: true,
+      },
       "RealTimeNotify.notifyideslistNumber": async function () {
          this.UNreadedNotifyCount()
       },
-      $route: async function () {
-         this.UNreadedNotifyCount()
-      }
    },
    methods: {
       ...mapMutations("auth", ["SetData"]),
       ...mapActions("auth", ["logout"]),
       ...mapActions(["GetUnReadedNotifyNum", "GetUnreadedMessageNum"]),
       ...mapActions("RealTimeNotify", ["StopConnectionToNotify"]),
+      ...mapActions(["StopConnectionToChat"]),
       GoSearch(e) {
          console.log("go", e.target.value)
          this.$router.push({ path: `/Search`, query: { search: e.target.value } })
@@ -96,6 +109,7 @@ export default {
       LogUserOut() {
          this.logout();
          this.StopConnectionToNotify()
+         this.StopConnectionToChat()
          this.$router.push("/Auth");
       },
       GoToNotification() {
@@ -104,28 +118,31 @@ export default {
       GoToChat() {
          this.$router.push('/Chat')
       },
+      async bootstrapUnreadCounts() {
+         await this.UNreadedNotifyCount()
+         await this.unreadMessageCount()
+      },
       async UNreadedNotifyCount() {
          const userId = this.GetUserData?.result?._id
          if (!userId) {
-            this.NotifyList = []
+            this.$store.commit('NotificationStore/updateUnReadedNotification', 0)
             return
          }
-         this.NotifyList = await this.GetUnReadedNotifyNum(userId) || []
-         let numofunreadednot = 0
-         this.NotifyList.forEach(el => {
-            if (!el.isRead) {
-               numofunreadednot++
-            }
-         })
-         this.notificationNum = numofunreadednot
-      }
+         await this.GetUnReadedNotifyNum(userId)
+      },
+      async unreadMessageCount() {
+         const userId = this.GetUserData?.result?._id
+         if (!userId) {
+            this.$store.commit('updateUnreadedMsg', 0)
+            return
+         }
+         const { totalUnreadMessageCount } = await this.GetUnreadedMessageNum(userId)
+         this.$store.commit('updateUnreadedMsg', totalUnreadMessageCount || 0)
+      },
    },
    async mounted() {
       this.SetData();
-      // get not number
-      await this.UNreadedNotifyCount()
-      // get chat messages numbers
-      await this.GetUnreadedMessageNum(userId)
+      await this.bootstrapUnreadCounts()
    },
 }
 

@@ -9,12 +9,11 @@
                         </q-toolbar>
 
                         <q-list bordered>
-                            <q-item
-                                @click="selectUser(contact)"
-                                v-for="contact in contacts" :key="contact._id" class="q-my-sm" clickable v-ripple>
+                            <q-item @click="selectUser(contact)" v-for="contact in contacts" :key="contact._id"
+                                class="q-my-sm" clickable v-ripple>
                                 <q-item-section avatar>
-                                    <q-avatar v-if="!contact.imageUrl" color="primary" text-color="white">
-                                        {{ contact.name[0] }}
+                                    <q-avatar v-if="!contact.imageUrl">
+                                        <img src="https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center" />
                                     </q-avatar>
                                     <q-avatar v-else>
                                         <img :src="contact?.imageUrl" />
@@ -23,8 +22,8 @@
                                 <q-item-section>
                                     <q-item-label>{{ contact.name }}</q-item-label>
                                 </q-item-section>
-                            
-                                <q-item-section side>
+
+                                <q-item-section side v-if="contact.isOnline">
                                     <q-badge color="positive" rounded />
                                 </q-item-section>
 
@@ -40,31 +39,21 @@
 
                 <!-- chat box -->
                 <div class="chat-messages" v-if="selectedUser != null" style="background: white;">
-                    <div class="q-pa-md row justify-center"
-                        style="overflow-y: auto; max-height: 400px;"
-                        ref="messageContainer"
-                        @scroll="handleScroll"    
-                    >
+                    <div class="q-pa-md row justify-center" style="overflow-y: auto; max-height: 400px;"
+                        ref="messageContainer" @scroll="handleScroll">
                         <div v-for="msg in messageBetweenUsers" :key="msg._id" style="width: 100%;">
                             <q-chat-message
                                 :name="msg.sender === MainUserData._id ? MainUserData.name : selectedUser.name"
-                                :avatar="msg.sender === MainUserData._id ? MainUserData.imageUrl : selectedUser.imageUrl"
-                                :text="[msg.content]"
-                                :sent="msg.sender === MainUserData._id ? true : false"
-                            />
+                                :avatar="msg.sender === MainUserData._id ? (MainUserData.imageUrl || 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center') : (selectedUser.imageUrl || 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center')"
+                                :text="[msg.content]" :sent="msg.sender === MainUserData._id ? true : false" />
                         </div>
                     </div>
 
                     <q-separator spaced />
-                    <q-input outlined v-model="messageToSend.text" @keyup.enter="handleSendMessage" label="write message..">
-                        <q-btn
-                            v-if="messageToSend.text != ''"
-                            @click="handleSendMessage"
-                            flat
-                            round
-                            color="primary"
-                            icon="eva-arrow-right"
-                        />
+                    <q-input outlined v-model="messageToSend.text" @keyup.enter="handleSendMessage"
+                        label="write message..">
+                        <q-btn v-if="messageToSend.text != ''" @click="handleSendMessage" flat round color="primary"
+                            icon="eva-arrow-right" />
                     </q-input>
 
                 </div>
@@ -77,7 +66,7 @@
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 export default {
     name: 'ChatComponent',
     data() {
@@ -87,91 +76,178 @@ export default {
             messageBetweenUsers: [],
             messagelistnum: 0,
             selectedUser: null,
-            MainUserData:{},
-            uniqueOnlineUsers:[],
+            MainUserData: {},
+            uniqueOnlineUsers: [],
         }
     },
-    computed:{
+    computed: {
         ...mapGetters('users', ['GetUserFollowersFollowing', 'GetUser']),
-        ...mapGetters('auth', ['GetUserData'])
+        ...mapGetters('auth', ['GetUserData']),
+        ...mapState(["RealTimeChat"]),
     },
-    async mounted(){
+    watch: {
+        "RealTimeChat.onlineFriends": function (online) {
+            const onlineFriendsArray = Object.values(online || {})
+            console.log('Online friend changed new val', onlineFriendsArray)
+            this.uniqueOnlineUsers = Array.from(new Set(onlineFriendsArray.map(u => String(u))))
+            this.updateOnlineList()
+        },
+        "RealTimeChat.privateMessages": function (message) {
+            if (this.contacts.length > 0) {
+                if (this.selectedUser && this.selectedUser?._id == message.sender) {
+                    this.messageBetweenUsers.push(message)
+                    let unreadSnapshot = 0
+                    this.contacts.forEach((contact) => {
+                        if (String(contact._id) === String(message.sender)) {
+                            unreadSnapshot = Number(contact.unReadedmessage) || 0
+                            contact.unReadedmessage = 0
+                        }
+                    })
+                    this.CallMarkMsgAsReaded(this.selectedUser, unreadSnapshot)
+                    setTimeout(() => {
+                        this.scrollDownFunction()
+                    }, 100)
+                } else {
+                    this.contacts.forEach((contact) => {
+                        if (contact._id == message.sender) {
+                            contact.unReadedmessage++
+                        }
+                    })
+                    this.syncGlobalUnreadCount()
+                }
+
+            }
+        }
+    },
+    async mounted() {
         this.MainUserData = this.GetUserData?.result || {}
         await this.GetUsList()
+
+        const online = (this.RealTimeChat && this.RealTimeChat.onlineFriends) || {}
+        this.uniqueOnlineUsers = Array.from(new Set(Object.values(online).map(u => String(u))))
+        this.updateOnlineList()
     },
-    methods:{
+    methods: {
         ...mapActions({
             GetUnreadedMessageNum: 'GetUnreadedMessageNum',
             GetChatMsgsBetweenTwoUsers: 'GetChatMsgsBetweenTwoUsers',
             sendMessageAction: 'SendMessage',
             MarkMsgsAsReaded: 'MarkMsgsAsReaded',
+            FetchUserFollowersFollowing: ['users', 'FetchUserFollowersFollowing'],
         }),
-        handleScroll(){
+        ...mapActions(['SendPrivateMessage']),
+        updateOnlineList() {
+            if (!Array.isArray(this.contacts)) return
+            const onlineSet = new Set((this.uniqueOnlineUsers || []).map(u => String(u)))
+            this.contacts.forEach(contact => {
+                const isOnline = onlineSet.has(String(contact._id))
+                if (contact && Object.prototype.hasOwnProperty.call(contact, 'isOnline')) {
+                    contact.isOnline = isOnline
+                } else if (this.$set) {
+                    this.$set(contact, 'isOnline', isOnline)
+                } else if (contact) {
+                    contact.isOnline = isOnline
+                }
+            })
+        },
+        handleScroll() {
             const container = this.$refs.messageContainer
-            if (container.scrollTop === 0){
-                // scorelled to the top
+            if (!container) return
+            if (container.scrollTop === 0) {
+                // scrolled to the top
                 this.GetOldestMessagesBetweenUsers()
             }
         },
-        async GetOldestMessagesBetweenUsers(){
-            this.messagelistnum = this.messagelistnum +1
+        async GetOldestMessagesBetweenUsers() {
+            this.messagelistnum = this.messagelistnum + 1
             var firstuid = this.MainUserData._id
-            var seconduid = this.selectedUser._id
+            var seconduid = this.selectedUser?._id
+            if (!firstuid || !seconduid) return
             var from = this.messagelistnum
-            var ndata = {from, firstuid, seconduid}
+            var ndata = { from, firstuid, seconduid }
 
-            var {msgs} = await this.GetChatMsgsBetweenTwoUsers(ndata)
-            this.messageBetweenUsers.unshift(...msgs)
-
+            const result = await this.GetChatMsgsBetweenTwoUsers(ndata)
+            const msgs = result?.msgs || []
+            if (Array.isArray(msgs)) {
+                this.messageBetweenUsers.unshift(...msgs)
+            }
         },
-        scrollDownFunction(){
+        scrollDownFunction() {
             const container = this.$refs.messageContainer
+            if (!container) return
             container.scrollTop = container.scrollHeight
         },
-        async CallMarkMsgAsReaded(user){
+        async CallMarkMsgAsReaded(user, unreadSnapshot = 0) {
             var mainuid = this.MainUserData._id
             var otheruid = user._id
-            var GetunReadedmessage = 0
 
-            this.contacts.forEach(
-                user => {
-                    if(String(otheruid) == String(user._id)){
-                        GetunReadedmessage = user.unReadedmessage
-                    }
-                }
-            )
-
-            var data = {mainuid, otheruid, GetunReadedmessage}
+            const data = {
+                mainuid,
+                otheruid,
+                GetunReadedmessage: unreadSnapshot,
+            }
             var { isMarked } = await this.MarkMsgsAsReaded(data)
 
-            if(isMarked){
+            if (isMarked) {
                 this.contacts.forEach(user => {
-                    if(String(otheruid) == String(user._id)){
+                    if (String(otheruid) == String(user._id)) {
                         user.unReadedmessage = 0
                     }
                 })
+                const unreadPayload = await this.GetUnreadedMessageNum(this.MainUserData._id)
+                const totalUnreadMessageCount = unreadPayload?.totalUnreadMessageCount
+                if (typeof totalUnreadMessageCount === 'number') {
+                    this.$store.commit('updateUnreadedMsg', totalUnreadMessageCount)
+                }
             }
         },
-        async GetUnreadedMsgList(){
+        async GetUnreadedMsgList() {
+            if (!this.MainUserData._id) return
             const unreadPayload = await this.GetUnreadedMessageNum(this.MainUserData._id)
             var messages = unreadPayload?.messages || []
+            
+            // 第一步：清零所有联系人的未读数
             this.contacts.forEach(user => {
-                messages.forEach(msg => {
-                    if(String(msg.otherUserId) == String(user._id)){
+                user.unReadedmessage = 0
+            })
+            
+            // 第二步：只根据后端返回的消息列表进行更新
+            messages.forEach(msg => {
+                this.contacts.forEach(user => {
+                    if (String(msg.otherUserId) == String(user._id)) {
                         user.unReadedmessage = Number(msg.numOfUnreadMessages)
                     }
                 })
             })
+            
+            // 第三步：同步全局未读总数
+            this.syncGlobalUnreadCount()
         },
-        async GetUsList(){
+        syncGlobalUnreadCount() {
+            const totalUnread = this.contacts.reduce((sum, contact) => {
+                return sum + (Number(contact.unReadedmessage) || 0)
+            }, 0)
+            this.$store.commit('updateUnreadedMsg', totalUnread)
+        },
+        async GetUsList() {
             this.contacts = []
-            var glist = await this.GetUserFollowersFollowing
-            this.contacts = glist
-            if(this.contacts){
+            // Call the FetchUserFollowersFollowing action to fetch and cache the data
+            await this.$store.dispatch('users/FetchUserFollowersFollowing')
+            // Now read from the getter
+            var glist = this.GetUserFollowersFollowing || []
+            // ensure fields exist so Vue reactivity works (Vue2 compatibility)
+            this.contacts = (glist || []).map(c => ({
+                ...c,
+                isOnline: !!c.isOnline,
+                unReadedmessage: 0,
+            }))
+            if (this.contacts.length) {
                 this.GetUnreadedMsgList()
             }
+            this.updateOnlineList()
         },
-        async selectUser(user){
+        async selectUser(user) {
+            if (!user?._id) return
             this.selectedUser = null
             this.messageBetweenUsers = []
 
@@ -179,35 +255,59 @@ export default {
             this.messagelistnum = 0
             var firstuid = this.MainUserData._id
             var seconduid = user._id
+            if (!firstuid) return
             var from = 0
-            var ndata = {from, firstuid, seconduid}
-            var {msgs} = await this.GetChatMsgsBetweenTwoUsers(ndata)
-            this.messageBetweenUsers.push(...msgs)
+            var ndata = { from, firstuid, seconduid }
+            const result = await this.GetChatMsgsBetweenTwoUsers(ndata)
+            const msgs = result?.msgs || []
+            if (Array.isArray(msgs)) {
+                this.messageBetweenUsers.push(...msgs)
+            }
+            
+            // 获取该联系人当前的未读数快照，传给标记已读函数
+            let unreadSnapshot = 0
+            this.contacts.forEach((contact) => {
+                if (String(contact._id) === String(user._id)) {
+                    unreadSnapshot = Number(contact.unReadedmessage) || 0
+                }
+            })
+            
             setTimeout(() => {
                 this.scrollDownFunction()
-                this.CallMarkMsgAsReaded(user)
+                this.CallMarkMsgAsReaded(user, unreadSnapshot)
+                this.syncGlobalUnreadCount()
             }, 100)
-
         },
-        async handleSendMessage(){
+        async handleSendMessage() {
             var content = this.messageToSend.text
             var sender = this.MainUserData._id
-            var receiver = this.selectedUser?._id
+            var receiver = String(this.selectedUser?._id)
 
-            if (!content || !receiver) {
+            if (!content || !receiver || !sender) {
                 return
             }
 
-            var sdata = {content, sender, receiver}
+            var sdata = { content, sender, receiver }
 
-            var savedMessage = await this.sendMessageAction(sdata)
-            if (savedMessage){
-                this.messageBetweenUsers.push(savedMessage)
+            if (!this.uniqueOnlineUsers.includes(receiver)) {
+                var savedMessage = await this.sendMessageAction(sdata)
+                if (savedMessage) {
+                    this.messageBetweenUsers.push(savedMessage)
+                    this.messageToSend.text = ''
+                    setTimeout(() => {
+                        this.scrollDownFunction()
+                    }, 100)
+                }
+            } else {
+                const localMessage = { ...sdata, _id: `temp-${Date.now()}` }
+                this.messageBetweenUsers.push(localMessage)
                 this.messageToSend.text = ''
+                this.SendPrivateMessage(sdata)
                 setTimeout(() => {
                     this.scrollDownFunction()
                 }, 100)
             }
+
         }
 
     },
@@ -224,6 +324,4 @@ export default {
     flex: 1;
     padding: 10px;
 }
-
-
 </style>
