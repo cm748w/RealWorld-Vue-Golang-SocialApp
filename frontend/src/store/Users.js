@@ -239,16 +239,32 @@ const Users = {
          * @param {Object} context - Vuex 上下文
          * @returns {Promise<Array>} - followers 和 following 合并后的用户列表
          */
-        async FetchUserFollowersFollowing({ commit }) {
+        async FetchUserFollowersFollowing({ commit, rootState }) {
             try {
-                const userd = JSON.parse(localStorage.getItem('profile'))
-                if (!userd?.result) {
+                const localProfile = JSON.parse(localStorage.getItem('profile') || 'null')
+                const currentUserId = rootState?.auth?.authData?.result?._id || localProfile?.result?._id
+                if (!currentUserId) {
                     console.error('User profile not found in localStorage')
                     return []
                 }
 
-                var followers = userd.result.followers || []
-                var following = userd.result.following || []
+                // Always refresh current user from backend so followers/following are up-to-date.
+                const { data: meData } = await api.fetchUserProfile(currentUserId)
+                const meNormalized = normalizeUserResponse(meData)
+                const latestUser = meNormalized?.user || {}
+
+                // Keep auth/profile cache in sync for other pages that still read localStorage profile.
+                const baseAuthData = rootState?.auth?.authData || localProfile || {}
+                if (baseAuthData?.token) {
+                    const refreshedAuthData = {
+                        ...baseAuthData,
+                        result: latestUser,
+                    }
+                    commit('auth/Auth', refreshedAuthData, { root: true })
+                }
+
+                var followers = latestUser.followers || []
+                var following = latestUser.following || []
 
                 const combineArray = [...followers, ...following]
                 const uniqueArray = Array.from(new Set(combineArray))
