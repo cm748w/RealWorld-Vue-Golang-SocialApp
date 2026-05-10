@@ -1,7 +1,13 @@
-FROM node:24.15.0-alpine AS build
+FROM node:24-bullseye-slim AS build
 WORKDIR /usr/src/app
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list || true && \
+	sed -i 's|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list || true && \
+	apt-get update && \
+	apt-get install -y --no-install-recommends python3 build-essential git ca-certificates && \
+	rm -rf /var/lib/apt/lists/* && \
+	npm config set registry https://registry.npmmirror.com/ && \
+	npm ci
 
 COPY frontend .
 ARG VUE_APP_API_URL=http://localhost:5000/
