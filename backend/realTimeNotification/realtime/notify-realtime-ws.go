@@ -36,6 +36,10 @@ func StartWebSocketServer(ws map[string]*websocket.Conn, wsMu *sync.Mutex) {
 		},
 	}))
 
+	app.Get("/healthz", func(c *fiber.Ctx) error {
+		return c.SendStatus(fiber.StatusOK)
+	})
+
 	app.Get("/ws/:userId", websocket.New(func(c *websocket.Conn) {
 		userId := c.Params("userId")
 		fmt.Printf("User %s connected\n", userId)
