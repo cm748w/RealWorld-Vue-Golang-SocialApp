@@ -63,7 +63,7 @@ export default {
    computed: {
       ...mapGetters("auth", ["GetUserData"]),
       ...mapGetters(["getUnReadedMsg"]),
-      ...mapGetters("NotificationStore", ["GetUnReadedNotification"]),
+      ...mapGetters(["GetUnReadedNotification"]),
       chatUnreadCount() {
          return this.getUnReadedMsg || 0
       },
@@ -125,7 +125,7 @@ export default {
       async UNreadedNotifyCount() {
          const userId = this.GetUserData?.result?._id
          if (!userId) {
-            this.$store.commit('NotificationStore/updateUnReadedNotification', 0)
+            this.$store.commit('updateUnReadedNotification', 0)
             return
          }
          await this.GetUnReadedNotifyNum(userId)
