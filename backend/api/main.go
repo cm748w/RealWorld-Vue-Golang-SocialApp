@@ -31,7 +31,7 @@ import (
 func main() {
 	// 加载 .env 环境变量文件，用于读取配置信息如数据库连接字符串等
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Warning: .env file not found, using environment variables")
 	}
 
 	// 连接到 MongoDB 数据库
@@ -70,6 +70,9 @@ func main() {
 	// 设置根路径的响应
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Welcome to social app.") // 返回欢迎信息
+	})
+	app.Get("/healthz", func(c *fiber.Ctx) error {
+		return c.SendStatus(fiber.StatusOK)
 	})
 
 	// 注册各种路由

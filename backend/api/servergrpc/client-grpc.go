@@ -5,6 +5,7 @@ import (
 	"Server/protos"
 	"context"
 	"log"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -20,7 +21,11 @@ type Client struct {
 func NewClient() (*Client, error) {
 	// conn, err := grpc.NewClient(":8090", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	// DevOps docker Compose usage
-	conn, err := grpc.NewClient("GolangNotifyService:8090", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	addr := os.Getenv("GOLANG_NOTIFY_SERVICE_ADDR")
+	if addr == "" {
+		addr = "localhost:8090"
+	}
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
