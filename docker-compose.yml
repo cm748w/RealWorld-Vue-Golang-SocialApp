@@ -6,6 +6,11 @@ services:
     restart: unless-stopped
     ports:
       - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://admin:REDACTED-ROTATE-ME@mongodb:27017
+      - JWT_SECRET=REDACTED-JWT-SECRET-ROTATE-ME
+      - POSTS_PAGE_SIZE=2
+      - POSTS_MAX_PAGE_SIZE=50
     networks:
       - app-network
     depends_on:
@@ -39,6 +44,10 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+    environment:
+      - VUE_APP_API_URL=http://GolangApiServer:5000/
+      - VUE_APP_RealTimeNotificationUrl=ws://GolangNotifyService:8088/ws/
+      - VUE_APP_RealTimeChatUrl=ws://GolangChatService:8001/ws/
     networks:
       - app-network
     volumes:
