@@ -5,7 +5,7 @@
                 <div class="user-list">
                     <div class="q-pa-md">
                         <q-toolbar class="bg-primary text-white shadow-1">
-                            <q-toolbar-title>Following & Following</q-toolbar-title>
+                            <q-toolbar-title>Following & Followers</q-toolbar-title>
                         </q-toolbar>
 
                         <q-list bordered>
