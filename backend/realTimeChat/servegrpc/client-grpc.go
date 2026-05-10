@@ -3,16 +3,25 @@ package servegrpc
 import (
 	"context"
 	"log"
+	"os"
 	"realTimeChat/protos"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+func getGolangApiServerAddr() string {
+	addr := os.Getenv("GOLANG_API_SERVER_ADDR")
+	if addr == "" {
+		addr = "localhost:5001"
+	}
+	return addr
+}
+
 func GetFollowingFollowersClient(id string) ([]*protos.UserIDsList, error) {
 	// conn, err := grpc.NewClient(":5001", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	// DevOps Docker Compose
-	conn, err := grpc.NewClient("GolangApiServer:5001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(getGolangApiServerAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		log.Fatalf("did not connected:%v", err)
@@ -37,7 +46,7 @@ func GetFollowingFollowersClient(id string) ([]*protos.UserIDsList, error) {
 func SendMessageClient(sender, receiver, content string) error {
 	// conn, err := grpc.NewClient(":5001", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	// DevOps Docker Compose
-	conn, err := grpc.NewClient("GolangApiServer:5001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(getGolangApiServerAddr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		log.Fatalf("did not connected:%v", err)

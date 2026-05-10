@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-
 	wsMu := sync.Mutex{}
 	ws := make(map[string]*websocket.Conn)
 
