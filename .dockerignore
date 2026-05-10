@@ -1,0 +1,12 @@
+.git
+.github
+.sixth
+**/node_modules
+**/dist
+**/tmp
+**/coverage
+**/*.log
+**/.env
+**/.env.test
+frontend/cypress/screenshots
+frontend/cypress/videos
