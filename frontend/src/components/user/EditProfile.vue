@@ -2,7 +2,7 @@
     <div class="row col-12 constrain">
         <div class="col-4 text-center">
             <q-avatar size="150px">
-                <img :src="Luserdata?.imageUrl" />
+                <img :src="Luserdata?.imageUrl || 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center'" />
             </q-avatar>
         </div>
         <div class="col-8 text-left">
