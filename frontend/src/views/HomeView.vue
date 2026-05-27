@@ -59,7 +59,6 @@
 			
 		</div>
 	</q-page>
-	<Add @Created="onPostCreated" />
 </template>
 
 <script>
@@ -148,14 +147,6 @@ export default {
 			if (scrollTop + windowHeight >= documentHeight - 200) {
 				this.loadMorePosts()
 			}
-		},
-		onPostCreated(){
-			this.current = 1
-			this.hasReachedEnd = false
-			this.posts = []
-			this.GetAllPosts(false)
-
-			window.scrollTo({ top: 0, behavior: 'smooth'})
 		},
 	},
 	async mounted() {
