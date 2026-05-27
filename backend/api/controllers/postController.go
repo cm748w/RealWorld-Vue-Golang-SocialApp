@@ -260,7 +260,7 @@ func GetAllPosts(c *fiber.Ctx) error {
 		})
 	}
 
-	defaultLimit := getEnvInt("POSTS_PAGE_SIZE", 2)
+	defaultLimit := getEnvInt("POSTS_PAGE_SIZE", 10)
 	maxLimit := getEnvInt("POSTS_MAX_PAGE_SIZE", 50)
 	limit, err := strconv.Atoi(c.Query("limit", strconv.Itoa(defaultLimit)))
 	if err != nil || limit < 1 {
