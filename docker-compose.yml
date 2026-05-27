@@ -1,16 +1,78 @@
-version: '3'
 services:
   GolangApiServer:
+    build:
+      context: .
+      dockerfile: backend/api/Dockerfile
     image: chenmonkey438/go-app-api
-    restart: unless-stopped
     container_name: GolangApiServer
+    restart: unless-stopped
     ports:
       - "5000:5000"
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - POSTS_PAGE_SIZE=${POSTS_PAGE_SIZE}
+      - POSTS_MAX_PAGE_SIZE=${POSTS_MAX_PAGE_SIZE}
+      - GOLANG_NOTIFY_SERVICE_ADDR=${GOLANG_NOTIFY_SERVICE_ADDR}
     networks:
       - app-network
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5000/healthz >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  GolangChatService:
+    build:
+      context: .
+      dockerfile: backend/realTimeChat/Dockerfile
+    image: chenmonkey438/go-app-chat
+    container_name: GolangChatService
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - GOLANG_API_SERVER_ADDR=${GOLANG_API_SERVER_ADDR}
+    networks:
+      - app-network
+    depends_on:
+      GolangApiServer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8001/healthz >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  GolangNotifyService:
+    build:
+      context: .
+      dockerfile: backend/realTimeNotification/Dockerfile
+    image: chenmonkey438/go-app-notify
+    container_name: GolangNotifyService
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+      - "8090:8090"
+    networks:
+      - app-network
+    depends_on:
+      GolangApiServer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8088/healthz >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   VueServer:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VUE_APP_API_URL: ${VUE_APP_API_URL}
+        VUE_APP_RealTimeNotificationUrl: ${VUE_APP_RealTimeNotificationUrl}
+        VUE_APP_RealTimeChatUrl: ${VUE_APP_RealTimeChatUrl}
     image: chenmonkey438/vue-app-fe
     container_name: VueServer
     restart: unless-stopped
@@ -18,10 +80,13 @@ services:
       - "80:80"
     networks:
       - app-network
-    volumes:
-      - dist:/dist
     depends_on:
-      - GolangApiServer
+      GolangApiServer:
+        condition: service_healthy
+      GolangChatService:
+        condition: service_healthy
+      GolangNotifyService:
+        condition: service_healthy
 
   mongodb:
     container_name: mongodb
@@ -29,17 +94,20 @@ services:
     ports:
       - 27017:27017
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=123456
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
-      - mongo-data:/usr/data/db
+      - mongo-data:/data/db
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' | grep -q 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 
 volumes:
-  dist:
-    driver: local
   mongo-data:
     driver: local
 

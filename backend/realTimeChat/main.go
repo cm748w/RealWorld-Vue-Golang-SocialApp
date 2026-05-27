@@ -7,9 +7,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/websocket/v2"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// 加载 .env 环境变量文件
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: .env file not found, using environment variables")
+	}
+
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
@@ -21,6 +27,9 @@ func main() {
 
 	manager := realtime.NewConnectionManager(realtime.GetUserFriends)
 	// register ws route
+	app.Get("/healthz", func(c *fiber.Ctx) error {
+		return c.SendStatus(fiber.StatusOK)
+	})
 
 	app.Get("/ws/:id", websocket.New(func(c *websocket.Conn) {
 		id := c.Params("id")

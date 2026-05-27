@@ -77,6 +77,7 @@ export default {
     methods: {
         ...mapActions('auth', ['signin', 'signup']),
         ...mapActions("RealTimeNotify", ["connectToNotify"]),
+        ...mapActions(['createChatConnection']),
         async Login() {
             console.log("login in data", this.Sin_data)
 
@@ -148,6 +149,7 @@ export default {
                         message: `登录成功，欢迎回来！`
                     })
                     this.connectToNotify()
+                    this.createChatConnection()
                     this.$router.push('/')
                 }
             }
@@ -250,6 +252,7 @@ export default {
                         message: `注册成功，欢迎加入我们的社区！`
                     })
                     this.connectToNotify()
+                    this.createChatConnection()
                     // this.$router.push('/')
                 }
             }

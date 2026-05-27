@@ -1,31 +1,39 @@
 <template>
    <q-header class="bg-white text-grey-10" bordered>
-      <q-toolbar class="constrain x">
-         <q-btn flat to="/">
+      <q-toolbar class="constrain">
+         <q-btn flat to="/" class="gt-xs">
             <q-icon left size="3em" name="eva-camera-outline" />
             <q-toolbar-title class="text grand-hotel text-bold">Home</q-toolbar-title>
          </q-btn>
 
-         <q-separator class="large-screen-only" vartical spaces />
+         <q-separator class="large-screen-only gt-xs" vertical spaces />
 
-         <q-toolbar-title class="text-center">
+         <q-toolbar-title class="text-center gt-xs">
             <q-input bottom-slots class="nuks" label="search" @keyup.enter="GoSearch($event)">
             </q-input>
          </q-toolbar-title>
 
-         <q-btn round v-show="GetUserData?.result" @click="GoToChat"
+         <q-btn round 
+            v-show="GetUserData?.result" 
+            @click="GoToChat"
             :icon="chatUnreadCount > 0 ? 'eva-message-square-outline' : 'eva-message-square'"
-            :color="chatUnreadCount > 0 ? 'primary' : 'dark'">
-            <q-badge v-if="chatUnreadCount > 0" color="negative" floating rounded :label="chatUnreadCount" />
+            :color="chatUnreadCount > 0 ? 'primary' : 'dark'"
+            class="gt-xs"
+            >
+            <q-badge v-if="chatUnreadCount > 0" color="negative" floating rounded :label="chatUnreadCount"/>
          </q-btn>
 
-         <q-btn round v-show="GetUserData?.result" @click="GoToNotification"
+         <q-btn round
+            v-show="GetUserData?.result" 
+            @click="GoToNotification"
             :icon="notificationNum > 0 ? 'eva-bell-outline' : 'eva-bell'"
-            :color="notificationNum > 0 ? 'primary' : 'dark'">
-            <q-badge v-if="notificationNum > 0" floating color="negative" rounded :label="notificationNum" />
+            :color="notificationNum > 0 ? 'primary' : 'dark'"
+            class="gt-xs" 
+            >
+            <q-badge v-if="notificationNum > 0" floating color="negative" rounded :label="notificationNum"/>
          </q-btn>
 
-         <q-btn v-show="GetUserData?.result" round>
+         <q-btn v-show="GetUserData?.result" round class="gt-xs">
             <q-avatar size="42px" v-if="GetUserData?.result?.imageUrl">
                <img :src="GetUserData?.result?.imageUrl">
             </q-avatar>
@@ -45,9 +53,123 @@
                </q-list>
             </q-menu>
          </q-btn>
+         <q-btn flat round icon="eva-menu-outline" @click="mobileMenuOpen = !mobileMenuOpen" class="lt-sm" />
+         <q-btn flat to="/" class="lt-sm">
+            <q-icon left size="2em" name="eva-camera-outline" />
+            <q-toolbar-title class="text grand-hotel text-bold">Home</q-toolbar-title>
+         </q-btn>
 
+         <q-space class="lt-sm" />
 
+         <q-btn v-show="GetUserData?.result" round class="lt-sm">
+            <q-avatar size="32px" v-if="GetUserData?.result?.imageUrl">
+               <img :src="GetUserData?.result?.imageUrl">
+            </q-avatar>
+            <q-avatar size="32px" v-else>
+               <img src="https://cdn-icons-png.flaticon.com/512/3237/3237472.png">
+            </q-avatar>
+
+            <q-badge 
+               v-if="(notificationNum + unReadedMessages) > 0" 
+               color="negative" 
+               floating 
+               rounded
+               :label="notificationNum + unReadedMessages" 
+            />
+
+            <q-menu>
+               <q-list style="min-width: 120px;">
+                  <q-item clickable v-close-popup>
+                     <q-item-section @click="Profile">Profile</q-item-section>
+                  </q-item>
+                  <q-item clickable v-close-popup>
+                     <q-item-section @click="LogUserOut">Logout</q-item-section>
+                  </q-item>
+               </q-list>
+            </q-menu>
+
+         </q-btn>
       </q-toolbar>
+
+      <q-drawer
+         v-model="mobileMenuOpen"
+         overlay
+         :width="200"
+         bordered
+         class="bg-grey-1"
+      >
+
+         <!-- search -->
+         <q-item>
+            <q-item-section>
+               <q-input
+               dense
+               outlined
+               label="Search"
+               @keyup.enter="GoSearch($event); mobileMenuOpen = false"
+               />
+            </q-item-section>
+         </q-item>
+
+         <q-separator />
+
+         <!-- profile -->
+         <q-item clickable v-ripple @click="handleProfileClick" v-if="GetUserData?.result">
+            <q-item-section avatar>
+               <q-icon name="eva-person-outline" />
+            </q-item-section>
+            <q-item-section>Profile</q-item-section>
+         </q-item>
+
+         <!-- message with bage -->
+         <q-item clickable v-ripple @click="handleChatClick" v-if="GetUserData?.result">
+            <q-item-section avatar>
+               <dev class="mobile-icon-badge">
+                  <q-icon name="eva-message-square-outline" />
+                  <q-badge 
+                    v-if="unReadedMessages > 0"
+                    color="negative"
+                    :label="unReadedMessages" 
+                  />
+               </dev>
+            </q-item-section>
+            <q-item-section>Messages</q-item-section>
+         </q-item>
+
+         <!-- notification with bade -->
+         <q-item clickable v-ripple @click="handleNotificationClick" v-if="GetUserData?.result">
+            <q-item-section avatar>
+               <dev class="mobile-icon-badge">
+                  <q-icon name="eva-bell-outline" />
+                  <q-badge 
+                    v-if="notificationNum > 0"
+                    color="negative"
+                    :label="notificationNum" 
+                  />
+               </dev>
+            </q-item-section>
+            <q-item-section>Notifications</q-item-section>
+         </q-item>
+
+         <q-separator />
+
+         <!-- logout -->
+         <q-item clickable v-ripple @click="handleLogoutClick" v-if="GetUserData?.result">
+            <q-item-section avatar>
+               <q-icon name="eva-log-out-outline" />
+            </q-item-section>
+            <q-item-section>Logout</q-item-section>
+         </q-item>
+
+         <!-- login for none auth users -->
+         <q-item clickable v-ripple to="/Auth" v-else>
+            <q-item-section avatar>
+               <q-icon name="eva-log-in-outline" />
+            </q-item-section>
+            <q-item-section>Login</q-item-section>
+         </q-item>
+      </q-drawer>
+
    </q-header>
 </template>
 
@@ -57,32 +179,62 @@ export default {
    name: 'NavBar',
    data() {
       return {
-         notificationNum: 0,
-         unReadedMessages: 0,
+         mobileMenuOpen: false
          // userData: null,
       }
    },
    computed: {
       ...mapGetters("auth", ["GetUserData"]),
       ...mapGetters(["getUnReadedMsg"]),
+      ...mapGetters(["GetUnReadedNotification"]),
       chatUnreadCount() {
-         return this.getUnReadedMsg ? this.getUnReadedMsg() : 0
+         return this.getUnReadedMsg || 0
       },
-      ...mapState(['RealTimeNotify'])
+      notificationNum() {
+         return this.GetUnReadedNotification || 0
+      },
+      ...mapState(['RealTimeNotify', 'RealTimeChat'])
    },
    watch: {
+      GetUserData: {
+         async handler(newVal, oldVal) {
+            const nextUserId = newVal?.result?._id
+            const prevUserId = oldVal?.result?._id
+
+            if (String(nextUserId || '') === String(prevUserId || '')) {
+               return
+            }
+
+            await this.bootstrapUnreadCounts()
+         },
+         immediate: true,
+      },
       "RealTimeNotify.notifyideslistNumber": async function () {
          this.UNreadedNotifyCount()
       },
-      $route: async function () {
-         this.UNreadedNotifyCount()
-      }
    },
    methods: {
       ...mapMutations("auth", ["SetData"]),
       ...mapActions("auth", ["logout"]),
       ...mapActions(["GetUnReadedNotifyNum", "GetUnreadedMessageNum"]),
       ...mapActions("RealTimeNotify", ["StopConnectionToNotify"]),
+      ...mapActions(["StopConnectionToChat"]),
+      handleProfileClick() {
+         this.mobileMenuOpen = false
+         this.Profile()
+      },
+      handleChatClick(){
+         this.mobileMenuOpen = false
+         this.GoToChat()
+      },
+      handleNotificationClick(){
+         this.mobileMenuOpen = false
+         this.GoToNotification()
+      },
+      handleLogoutClick(){
+         this.mobileMenuOpen = false
+         this.LogUserOut()
+      },
       GoSearch(e) {
          console.log("go", e.target.value)
          this.$router.push({ path: `/Search`, query: { search: e.target.value } })
@@ -96,6 +248,7 @@ export default {
       LogUserOut() {
          this.logout();
          this.StopConnectionToNotify()
+         this.StopConnectionToChat()
          this.$router.push("/Auth");
       },
       GoToNotification() {
@@ -104,28 +257,31 @@ export default {
       GoToChat() {
          this.$router.push('/Chat')
       },
+      async bootstrapUnreadCounts() {
+         await this.UNreadedNotifyCount()
+         await this.unreadMessageCount()
+      },
       async UNreadedNotifyCount() {
          const userId = this.GetUserData?.result?._id
          if (!userId) {
-            this.NotifyList = []
+            this.$store.commit('updateUnReadedNotification', 0)
             return
          }
-         this.NotifyList = await this.GetUnReadedNotifyNum(userId) || []
-         let numofunreadednot = 0
-         this.NotifyList.forEach(el => {
-            if (!el.isRead) {
-               numofunreadednot++
-            }
-         })
-         this.notificationNum = numofunreadednot
-      }
+         await this.GetUnReadedNotifyNum(userId)
+      },
+      async unreadMessageCount() {
+         const userId = this.GetUserData?.result?._id
+         if (!userId) {
+            this.$store.commit('updateUnreadedMsg', 0)
+            return
+         }
+         const { totalUnreadMessageCount } = await this.GetUnreadedMessageNum(userId)
+         this.$store.commit('updateUnreadedMsg', totalUnreadMessageCount || 0)
+      },
    },
    async mounted() {
       this.SetData();
-      // get not number
-      await this.UNreadedNotifyCount()
-      // get chat messages numbers
-      await this.GetUnreadedMessageNum(userId)
+      await this.bootstrapUnreadCounts()
    },
 }
 
@@ -143,4 +299,17 @@ export default {
 
 .q-btn
    margin-left: 10px
+
+.mobile-icon-badge
+   position: relative
+   display: inline-block
+
+.q-badge
+   position: absolute
+   top: -6px
+   right: -6px
+   min-width: 18px
+   height: 18px
+   font-size: 11px
+
 </style>
