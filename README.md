@@ -61,10 +61,10 @@
 ![帖子详情 PC 端截图](docs/screenshots/post-detail-desktop.png)
 ![聊天 PC 端截图](docs/screenshots/chat-desktop.png)
 
-### 手机端
+<!-- ### 手机端
 
 ![首页 手机端截图](docs/screenshots/home-mobile.png)
-![聊天 手机端截图](docs/screenshots/chat-mobile.png)
+![聊天 手机端截图](docs/screenshots/chat-mobile.png) -->
 
 > [!NOTE]
 > 截图建议覆盖登录、发帖、聊天和通知弹窗等核心路径，方便新用户快速理解产品。
@@ -352,18 +352,13 @@ ws://localhost:8088/ws/:userId
 - 新增容器服务时，同时补充 healthcheck 和 README 启动说明。
 - 修改实时服务时，优先验证 WebSocket 和 gRPC 链路。
 
-## License
 
-当前仓库尚未包含独立的 `LICENSE` 文件。
-
-> [!NOTE]
-> 如果你后续决定采用 MIT、Apache-2.0 或其他许可证，建议把 `LICENSE` 文件补进仓库并同步更新这一节。
 
 ## 作者与联系方式
 
-- 作者：请在此填写你的名字或团队名称
-- GitHub：请在此填写你的仓库主页
-- 邮箱：请在此填写你的联系邮箱
+- 作者：cm748w
+- GitHub：https://github.com/cm748w/RealWorld-Vue-Golang-SocialApp
+- 邮箱：shana996@163.com
 
 ## 致谢
 
@@ -375,6 +370,3 @@ ws://localhost:8088/ws/:userId
 - Docker / Docker Compose
 - gRPC 与 WebSocket
 - Swagger / OpenAPI
-
-<!-- > [!TIP] -->
-<!-- > 如果你希望，我还可以继续帮你把 README 再细化成“开源项目风格”或“企业交付风格”两种版本。 -->
