@@ -22,17 +22,14 @@
 - 通过 [docker-compose.yml](docker-compose.yml) 一键启动前端、API、聊天服务、通知服务和 MongoDB
 - 通过健康检查保证服务按依赖顺序就绪后再对外提供访问
 
-> [!NOTE]
-> 当前仓库没有单独的线上 Demo 地址，建议先用 Docker Compose 在本地启动整套系统。
 
-## 在线预览 / 演示地址
 
-- 在线 Demo：暂无
+##  演示地址
+
 - 本地演示：`http://localhost`
 - Swagger：`http://localhost:5000/swagger/index.html`
 
-> [!TIP]
-> 如果你后续部署到公网服务器，可以在这里补充正式演示地址、API 域名和 WebSocket 地址。
+
 
 ## 主要特性
 
@@ -53,7 +50,6 @@
 
 ## 项目截图
 
-请将截图放到例如 `docs/screenshots/` 目录下，并按下面的占位图替换：
 
 ### PC 端
 
@@ -66,8 +62,6 @@
 ![首页 手机端截图](docs/screenshots/home-mobile.png)
 ![聊天 手机端截图](docs/screenshots/chat-mobile.png) -->
 
-> [!NOTE]
-> 截图建议覆盖登录、发帖、聊天和通知弹窗等核心路径，方便新用户快速理解产品。
 
 ## 快速开始
 
@@ -78,8 +72,6 @@
 - Go 1.26+（仅在本地后端开发时需要）
 - MongoDB（由 Compose 自动启动，无需手动安装）
 
-> [!TIP]
-> 如果你只想体验完整功能，优先使用 Docker Compose，不需要单独安装前后端依赖。
 
 ### 一键启动整套系统（推荐）
 
