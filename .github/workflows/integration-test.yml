@@ -63,7 +63,7 @@ jobs:
           - name: Start Frontend in background
             run: |
                 echo "Starting Frontend application on port 80.."
-                sudo nohup npm run serve > frontend.log 2>&1 &
+                sudo nohup pnpm run serve > frontend.log 2>&1 &
                 echo $! > frontend.pid
                 sleep 15
                 echo "frontend process started"
@@ -88,7 +88,7 @@ jobs:
             working-directory: ./frontend
 
           - name: Run Cypress Integration Tests
-            run: npm run cy:run:auth
+            run: pnpm cy:run:auth
             working-directory: ./frontend
             env:
                 CYPRESS_BASE_URL: http://localhost:80
