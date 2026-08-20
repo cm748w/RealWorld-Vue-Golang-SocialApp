@@ -44,7 +44,7 @@
 
 | 层级 | 技术栈 | 说明 |
 | --- | --- | --- |
-| Frontend | Vue 3、Vue Router、Vuex、Quasar、Axios、Cypress、Nginx | 单页应用、状态管理、路由、端到端测试与静态资源交付 |
+| Frontend | Vue 3、Vue Router、Vuex、Quasar、Axios、Cypress、pnpm、Nginx | 单页应用、状态管理、路由、端到端测试、依赖管理与静态资源交付 |
 | Backend | Go、Fiber、gRPC、WebSocket、MongoDB、Swagger、godotenv | REST API、实时服务、数据存储、接口文档与环境变量管理 |
 | DevOps | Docker、Docker Compose、.env、healthcheck、Nginx | 容器化交付、服务编排、健康检查、前端静态托管 |
 
@@ -68,9 +68,9 @@
 ### 环境要求
 
 - Docker Desktop 或 Docker Engine + Docker Compose v2
-- Node.js 18+（仅在本地前端开发时需要）
+- Node.js 18+ 与 pnpm 9+（仅在本地前端开发时需要）
 - Go 1.26+（仅在本地后端开发时需要）
-- MongoDB（由 Compose 自动启动，无需手动安装）
+- MongoDB（Docker 模式由 Compose 自动启动 `mongo:7.0`；纯本地开发需自备 MongoDB，并建议使用端口 `27018`，详见下文「MongoDB 端口规划」）
 
 
 ### 一键启动整套系统（推荐）
@@ -115,7 +115,8 @@ docker compose down
 
 #### 1. 启动基础依赖
 
-只启动 MongoDB 和相关服务，或直接启动整套 Compose 环境：
+- **推荐：直接使用本地 MongoDB**。纯本地开发时，API 默认连接本机 `localhost:27018`（见 `backend/api/.env`），无需启动任何容器。
+- 如果本机没有安装 MongoDB，也可以先启动 Compose 中的容器版 MongoDB（`mongo:7.0`）：
 
 ```bash
 docker compose up -d mongodb
@@ -145,9 +146,12 @@ go run main.go
 
 ```bash
 cd frontend
-npm install
-npm run serve
+pnpm install
+pnpm run serve
 ```
+
+> [!NOTE]
+> 前端使用 **pnpm** 作为包管理器：锁文件为 `pnpm-lock.yaml`，构建脚本白名单配置在 `pnpm-workspace.yaml`（`allowBuilds`，如 Cypress 二进制下载）。安装新依赖使用 `pnpm add <pkg>`，CI 与 Docker 构建均基于 pnpm。
 
 前端默认读取 `frontend/.env`，本地开发时会连接：
 - `http://localhost:5000/`
@@ -160,6 +164,19 @@ npm run serve
 
 > [!NOTE]
 > 也就是说，项目启动时不需要额外执行“数据库迁移”命令，核心数据集合会在服务运行和首次写入时创建。
+
+### MongoDB 端口规划（本地 27018 与容器 27017）
+
+项目允许本地 MongoDB 与容器版 MongoDB 并存、互不冲突：
+
+| 环境 | 监听地址 | 说明 |
+| --- | --- | --- |
+| 容器版（Compose `mongodb` 服务） | 宿主 `27017`；容器网络内为 `mongodb:27017` | 仅用于 Docker 全家桶，数据存放在数据卷 `mongo-data` |
+| 本地版（纯本地开发） | `127.0.0.1:27018` | 避开容器版 `27017`，数据存放在本机 `dbPath` |
+
+> [!NOTE]
+> - 容器内的 API 通过 Compose 内部网络以服务名 `mongodb:27017` 连接容器版 MongoDB，宿主端口映射仅对外部访问可见，因此两套 MongoDB 可以各自独立工作。
+> - 如需调整本地 MongoDB 端口，请修改本机 `mongod.cfg`（Windows 默认位于 `C:\Program Files\MongoDB\Server\<版本>\bin\mongod.cfg`）中的 `net.port`，并同步更新 `backend/api/.env` 的 `MONGO_URI`。
 
 ## 生产环境部署
 
@@ -195,12 +212,12 @@ docker compose up -d --build
 
 ### 根目录 `.env`
 
-该文件由 Docker Compose 读取，同时也用于前端构建参数注入。
+该文件由 Docker Compose 读取，同时也用于前端构建参数注入。它已被根目录 `.gitignore` 忽略，不会进入版本库；如果本地缺失，请按下方示例在项目根目录手动创建。
 
 ```dotenv
 MONGO_URI=mongodb://admin:123456@mongodb:27017
 JWT_SECRET=your-jwt-secret
-POSTS_PAGE_SIZE=2
+POSTS_PAGE_SIZE=10
 POSTS_MAX_PAGE_SIZE=50
 MONGO_INITDB_ROOT_USERNAME=admin
 MONGO_INITDB_ROOT_PASSWORD=123456
@@ -216,9 +233,10 @@ VUE_APP_RealTimeChatUrl=ws://localhost:8001/ws/
 用于 API 服务本地开发：
 
 ```dotenv
-MONGO_URI=mongodb://localhost:27017
+# 本地 MongoDB 使用端口 27018，避开 Docker 版 MongoDB 的 27017
+MONGO_URI=mongodb://localhost:27018
 JWT_SECRET=your-jwt-secret
-POSTS_PAGE_SIZE=2
+POSTS_PAGE_SIZE=10
 POSTS_MAX_PAGE_SIZE=50
 GOLANG_NOTIFY_SERVICE_ADDR=localhost:8090
 ```
@@ -277,7 +295,9 @@ VUE_APP_RealTimeChatUrl=ws://localhost:8001/ws/
 		├── public/
 		├── Dockerfile
 		├── vue.config.js
-		└── package.json
+		├── package.json
+		├── pnpm-lock.yaml
+		└── pnpm-workspace.yaml
 ```
 
 ## 核心功能使用说明
@@ -350,15 +370,4 @@ ws://localhost:8088/ws/:userId
 
 - 作者：cm748w
 - GitHub：https://github.com/cm748w/RealWorld-Vue-Golang-SocialApp
-- 邮箱：shana996@163.com
-
-## 致谢
-
-感谢以下技术与项目生态提供支持：
-
-- Vue 3
-- Go 生态与 Fiber
-- MongoDB
-- Docker / Docker Compose
-- gRPC 与 WebSocket
-- Swagger / OpenAPI
+- 邮箱：shanacongyun@163.com

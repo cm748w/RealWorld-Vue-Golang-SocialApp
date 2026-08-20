@@ -1,0 +1,11 @@
+# pnpm 工作区与配置（pnpm 11 的 settings 中心）
+# allowBuilds: 逐包批准依赖的构建脚本（pnpm 默认不执行依赖的 postinstall）
+# - cypress: 必须，postinstall 下载 Cypress 二进制
+# - @parcel/watcher: Cypress 传递依赖的原生二进制
+# - core-js: 无害的赞助信息脚本
+# - yorkie: vue-cli 的 git hooks 工具
+allowBuilds:
+  '@parcel/watcher': true
+  core-js: true
+  cypress: true
+  yorkie: true
