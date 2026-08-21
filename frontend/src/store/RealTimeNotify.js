@@ -23,8 +23,9 @@ const RealTimeNotify = {
         async connectToNotify(context) {
             if (JSON.parse(localStorage.getItem('profile')) && context.state.ws == null) {
                 const Userid = JSON.parse(localStorage.getItem('profile')).result._id
-                const uri = process.env.VUE_APP_RealTimeNotificationUrl
-                const ws = new WebSocket(`${uri}${Userid}`)
+                // 运行时根据当前页面地址动态拼接，nginx 将 /ws-notify/ 反代到通知服务 8088
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+                const ws = new WebSocket(`${wsProtocol}://${window.location.host}/ws-notify/${Userid}`)
 
                 ws.onopen = () => {
                     context.commit('SET_WS', ws)

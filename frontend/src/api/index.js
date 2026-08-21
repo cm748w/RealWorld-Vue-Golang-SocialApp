@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API = axios.create({ baseURL: process.env.VUE_APP_API_URL });
+// 使用相对路径 /api/，由 nginx 反向代理到后端 GolangApiServer:5000，
+// 这样通过任意 IP/域名访问（含局域网 IP）都能正确连上后端，不再依赖构建时写死的地址。
+const API = axios.create({ baseURL: '/api/' });
 
 API.interceptors.request.use((req) => {
     if (localStorage.getItem('profile')) {
