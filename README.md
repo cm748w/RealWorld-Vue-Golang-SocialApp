@@ -107,7 +107,7 @@ docker compose down
 ```
 
 > [!NOTE]
-> Compose 会自动读取根目录 [.env](.env) 中的变量，其中前端构建地址应使用浏览器可访问的 `localhost`，而后端服务间通信则使用容器网络里的服务名。
+> Compose 会自动读取根目录 [.env](.env) 中的变量。前端已不依赖构建地址参数：浏览器访问前端时，API 与 WebSocket 请求走同源相对路径（`/api/`、`/ws-notify/`、`/ws-chat/`），由 nginx 反向代理到各后端服务，因此通过任意 IP/域名（含局域网 IP）访问均可正常连接后端。
 
 ### 本地开发部署
 
@@ -212,7 +212,7 @@ docker compose up -d --build
 
 ### 根目录 `.env`
 
-该文件由 Docker Compose 读取，同时也用于前端构建参数注入。它已被根目录 `.gitignore` 忽略，不会进入版本库；如果本地缺失，请按下方示例在项目根目录手动创建。
+该文件由 Docker Compose 读取。它已被根目录 `.gitignore` 忽略，不会进入版本库；如果本地缺失，请按下方示例在项目根目录手动创建。
 
 ```dotenv
 MONGO_URI=mongodb://admin:123456@mongodb:27017
@@ -223,9 +223,6 @@ MONGO_INITDB_ROOT_USERNAME=admin
 MONGO_INITDB_ROOT_PASSWORD=123456
 GOLANG_NOTIFY_SERVICE_ADDR=GolangNotifyService:8090
 GOLANG_API_SERVER_ADDR=GolangApiServer:5001
-VUE_APP_API_URL=http://localhost:5000/
-VUE_APP_RealTimeNotificationUrl=ws://localhost:8088/ws/
-VUE_APP_RealTimeChatUrl=ws://localhost:8001/ws/
 ```
 
 ### `backend/api/.env`
@@ -251,13 +248,7 @@ GOLANG_API_SERVER_ADDR=localhost:5001
 
 ### `frontend/.env`
 
-用于前端本地开发：
-
-```dotenv
-VUE_APP_API_URL=http://localhost:5000/
-VUE_APP_RealTimeNotificationUrl=ws://localhost:8088/ws/
-VUE_APP_RealTimeChatUrl=ws://localhost:8001/ws/
-```
+前端已不再需要构建地址变量：API 与 WebSocket 均使用运行时相对路径（`/api/`、`/ws-notify/`、`/ws-chat/`），由 nginx 反向代理到后端，因此无需在此配置任何地址。
 
 > [!NOTE]
 > `backend/realTimeNotification` 当前不需要单独的 `.env` 文件。
