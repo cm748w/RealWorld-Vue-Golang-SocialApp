@@ -47,8 +47,9 @@ const RealTimeChat = {
             try {
                 context.commit('setUserId')
                 if (context.state.userId && context.state.ws == null) {
-                    const uri = process.env.VUE_APP_RealTimeChatUrl
-                    const ws = new WebSocket(`${uri}${context.state.userId}`)
+                    // 运行时根据当前页面地址动态拼接，nginx 将 /ws-chat/ 反代到聊天服务 8001
+                    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+                    const ws = new WebSocket(`${wsProtocol}://${window.location.host}/ws-chat/${context.state.userId}`)
 
                     ws.onopen = () => {
                         context.commit('SET_WS', ws)

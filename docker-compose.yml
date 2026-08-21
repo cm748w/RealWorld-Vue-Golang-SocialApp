@@ -69,10 +69,6 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-      args:
-        VUE_APP_API_URL: ${VUE_APP_API_URL}
-        VUE_APP_RealTimeNotificationUrl: ${VUE_APP_RealTimeNotificationUrl}
-        VUE_APP_RealTimeChatUrl: ${VUE_APP_RealTimeChatUrl}
     image: chenmonkey438/vue-app-fe
     container_name: VueServer
     restart: unless-stopped
