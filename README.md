@@ -18,7 +18,7 @@
 这是一个面向社交场景的全栈项目，前端使用 Vue 3 构建单页应用，后端由多个 Go 服务组成，分别负责 REST API、实时聊天和实时通知。系统同时提供 gRPC 与 WebSocket 能力，适合展示前后端分离、服务拆分、实时交互和容器化部署等完整工程实践。
 
 项目当前以 Docker Compose 作为主启动方式：
-- 通过根目录 [.env](.env) 统一注入 Compose 和前端构建所需变量
+- 通过根目录 [.env](.env) 统一注入 Compose 所需变量
 - 通过 [docker-compose.yml](docker-compose.yml) 一键启动前端、API、聊天服务、通知服务和 MongoDB
 - 通过健康检查保证服务按依赖顺序就绪后再对外提供访问
 
@@ -68,7 +68,7 @@
 ### 环境要求
 
 - Docker Desktop 或 Docker Engine + Docker Compose v2
-- Node.js 18+ 与 pnpm 9+（仅在本地前端开发时需要）
+- Node.js 22.13+ 与 pnpm 11+（仅在本地前端开发时需要；与 Docker 构建使用的 `node:24` + `pnpm@11.7.0` 保持一致）
 - Go 1.26+（仅在本地后端开发时需要）
 - MongoDB（Docker 模式由 Compose 自动启动 `mongo:7.0`；纯本地开发需自备 MongoDB，并建议使用端口 `27018`，详见下文「MongoDB 端口规划」）
 
@@ -89,10 +89,12 @@ docker compose up --build -d
 docker compose ps
 ```
 
-5. 打开应用：
+5. 打开应用（本机）：
 - 前端：`http://localhost`
 - API：`http://localhost:5000`
 - Swagger：`http://localhost:5000/swagger/index.html`
+
+局域网内其他设备访问时，把 `localhost` 换成这台机器的局域网 IP 即可（例如 `http://192.168.1.100`）。前端页面内的 API 与 WebSocket 请求均为同源相对路径（`/api/`、`/ws-notify/`、`/ws-chat/`），会自动指向当前访问地址并经 nginx 反代到后端，无需额外配置。
 
 6. 查看日志：
 
@@ -153,10 +155,13 @@ pnpm run serve
 > [!NOTE]
 > 前端使用 **pnpm** 作为包管理器：锁文件为 `pnpm-lock.yaml`，构建脚本白名单配置在 `pnpm-workspace.yaml`（`allowBuilds`，如 Cypress 二进制下载）。安装新依赖使用 `pnpm add <pkg>`，CI 与 Docker 构建均基于 pnpm。
 
-前端默认读取 `frontend/.env`，本地开发时会连接：
-- `http://localhost:5000/`
-- `ws://localhost:8088/ws/`
-- `ws://localhost:8001/ws/`
+前端代码统一使用相对路径（`/api`、`/ws-notify`、`/ws-chat`），本地开发时由 dev server（`vue.config.js` 中的 `devServer.proxy`）转发到对应后端服务：
+- `/api/*` → `http://localhost:5000/*`
+- `/ws-notify/*` → `ws://localhost:8088/ws/*`
+- `/ws-chat/*` → `ws://localhost:8001/ws/*`
+
+> [!NOTE]
+> `pnpm run serve` 默认监听 **80 端口**（见 `frontend/package.json` 的 scripts），访问 `http://localhost` 即可；若 80 端口被占用，可临时修改该脚本的 `--port` 参数。
 
 #### 5. 数据库迁移说明
 
@@ -263,10 +268,14 @@ GOLANG_API_SERVER_ADDR=localhost:5001
 │   ├── api
 │   │   ├── main.go
 │   │   ├── Dockerfile
+│   │   ├── .env
 │   │   ├── controllers/
 │   │   ├── database/
+│   │   ├── docs/
 │   │   ├── middleware/
 │   │   ├── models/
+│   │   ├── protos/
+│   │   ├── realtime/
 │   │   ├── routes/
 │   │   ├── servergrpc/
 │   │   ├── tests/
@@ -274,21 +283,27 @@ GOLANG_API_SERVER_ADDR=localhost:5001
 │   ├── realTimeChat
 │   │   ├── main.go
 │   │   ├── Dockerfile
+│   │   ├── .env
+│   │   ├── protos/
 │   │   ├── realtime/
 │   │   └── servegrpc/
 │   └── realTimeNotification
 │       ├── main.go
 │       ├── Dockerfile
+│       ├── protos/
 │       ├── realtime/
 │       └── servegrpc/
 └── frontend
-		├── src/
-		├── public/
-		├── Dockerfile
-		├── vue.config.js
-		├── package.json
-		├── pnpm-lock.yaml
-		└── pnpm-workspace.yaml
+    ├── src/
+    ├── public/
+    ├── .env
+    ├── .nginx/
+    │   └── nginx.conf          # 静态托管 + /api、/ws-notify、/ws-chat 反向代理
+    ├── Dockerfile
+    ├── vue.config.js
+    ├── package.json
+    ├── pnpm-lock.yaml
+    └── pnpm-workspace.yaml
 ```
 
 ## 核心功能使用说明
@@ -326,6 +341,9 @@ ws://localhost:8001/ws/:id
 ```text
 ws://localhost:8088/ws/:userId
 ```
+
+> [!NOTE]
+> 上表为后端原始 WebSocket 路由（聊天 `:8001/ws/:id`、通知 `:8088/ws/:userId`）。前端对外统一走 `ws://<host>/ws-chat/:id` 与 `ws://<host>/ws-notify/:userId`，由 nginx（生产/Compose）或 dev server（本地开发）反代到对应后端服务。
 
 > [!TIP]
 > 如果你在调试实时功能，建议同时打开前端页面、浏览器控制台和 `docker compose logs -f`，能更快定位消息链路问题。

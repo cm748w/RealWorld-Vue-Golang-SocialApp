@@ -1,5 +1,7 @@
 # dependencies
 node_modules/
+# 项目使用 pnpm，yarn.lock 不应进入仓库（残留会导致 vue-cli 误判为 yarn 项目）
+yarn.lock
 
 # production build output
 dist/
