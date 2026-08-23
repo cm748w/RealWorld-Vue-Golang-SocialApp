@@ -61,8 +61,7 @@ export default {
             },
             // 表单验证规则
             nameRules: [
-                val => !!val || '请输入姓名',
-                val => val.length >= 2 || '姓名至少需要2个字符'
+                val => !!val || '请输入姓名'
             ],
             emailRules: [
                 val => !!val || '请输入邮箱',
