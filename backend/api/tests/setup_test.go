@@ -71,7 +71,7 @@ func connectTestDB() {
 	// use test db
 	mongoUri := os.Getenv("TEST_MONGO_URI")
 	if mongoUri == "" {
-		mongoUri = ""
+		mongoUri = os.Getenv("MONGO_URI")
 	}
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoUri))
