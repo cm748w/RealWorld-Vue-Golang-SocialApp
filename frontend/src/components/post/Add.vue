@@ -19,20 +19,33 @@
                 </q-card-section>
 
                 <q-card-section class="q-pt-md">
-                    <q-input dense outlined v-model="post.title" autofocus placeholder="Post Title" />
+                    <q-input dense outlined v-model="post.title" autofocus placeholder="Post Title"
+                        maxlength="120" counter />
                     <div class="q-mt-sm">
-                        <q-input outlined v-model="post.message" placeholder="What's on your mind?" type="textarea" autogrow />
+                        <q-input outlined v-model="post.message" placeholder="What's on your mind?"
+                            type="textarea" autogrow maxlength="500" counter />
                     </div>
+
+                    <div class="row q-gutter-xs q-mt-sm no-scrollbar">
+                        <q-btn v-for="emoji in emojis" :key="emoji" flat round dense size="sm"
+                            class="emoji-btn" @click="addEmoji(emoji)">
+                            <span style="font-size:1.1rem;">{{ emoji }}</span>
+                        </q-btn>
+                    </div>
+
                     <div class="q-mt-sm q-gutter-sm">
                         <q-file v-model="file" label="Pick Image" filled style="max-width: 400px;" />
                     </div>
-                    <div class="q-mt-sm q-gutter-sm row items-start">
+
+                    <div v-if="post.selectedFile" class="q-mt-sm row items-center q-gutter-sm">
                         <q-img
                             :src="post.selectedFile"
                             spinner-color="red"
-                            style="height: 140px; max-width: 150px;"
+                            style="height: 120px; max-width: 140px;"
                             class="rounded-borders"
                         />
+                        <q-btn flat round dense icon="eva-trash-2-outline" color="negative"
+                            @click="clearImage" aria-label="Remove image" />
                     </div>
                 </q-card-section>
 
@@ -55,7 +68,8 @@ export default {
         return {
             persistent: false,
             post: { title: '', message: '', name: '', selectedFile: null },
-            file: null
+            file: null,
+            emojis: ['😀', '😂', '😍', '😎', '🥳', '👍', '❤️', '🔥', '🎉', '🙏', '💯', '🤔']
         }
     },
     computed: {
@@ -153,11 +167,27 @@ export default {
                 this.$q.notify({ icon: 'eva-alert-circle-outline', type: 'negative', message: 'Failed to read file' })
             }
         },
+        addEmoji(emoji) {
+            this.post.message = (this.post.message || '') + emoji
+        },
+        clearImage() {
+            this.post.selectedFile = null
+            this.file = null
+        },
     },
 }</script>
 
 <style lang="scss" scoped>
 .fab-btn {
   box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+}
+
+.emoji-btn {
+  font-size: 1.2rem;
+  transition: transform 0.1s ease, background 0.1s ease;
+
+  &:hover {
+    transform: scale(1.2);
+  }
 }
 </style>
