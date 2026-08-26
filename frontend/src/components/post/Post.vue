@@ -191,7 +191,7 @@ export default {
   }
 
   .post-avatar {
-    border: 2px solid rgba(79, 70, 229, 0.35);
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.35);
   }
 
   .post-img {
