@@ -1,40 +1,49 @@
 <template>
-    <div class="row col-12 constrain">
-        <div class="col-4 text-center">
-            <q-avatar size="150px">
-                <img :src="Luserdata?.imageUrl || 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center'" />
-            </q-avatar>
-        </div>
-        <div class="col-8 text-left">
-            <i>Edit Profile</i>
-            <div class="text-h6 q-pa-lg" style="margin: auto;">
-                <q-btn v-if="isSameUser" @click="Save" flat label="Save" />
-            </div>
+    <div class="q-pa-md">
+        <q-card class="surface overflow-hidden">
+            <div class="profile-cover" />
 
-            <q-input dense v-model="Luserdata.name" autofocus placeholder="User Data Title" />
-
-            <div>
-                <q-input 
-                    v-model="Luserdata.bio" 
-                    placeholder="User Data Bio" 
-                    type="textarea"
-                />
-            </div>
             <div class="q-pa-md">
-                <q-file
-                    v-model="file"
-                    label="Pick Image"
-                    filled
+                <div class="row items-center justify-between q-mb-md">
+                    <div class="text-h6 text-weight-bold">Edit Profile</div>
+                    <q-btn v-if="isSameUser" label="Save" color="primary" unelevated rounded @click="Save" />
+                </div>
+
+                <div class="row items-center q-col-gutter-md">
+                    <div class="col-auto">
+                        <q-avatar size="88px" class="profile-avatar">
+                            <img :src="Luserdata?.imageUrl || defaultAvatar" />
+                        </q-avatar>
+                    </div>
+                    <div class="col">
+                        <q-file
+                            v-model="file"
+                            label="Change avatar"
+                            filled
+                            style="max-width: 320px;"
+                        />
+                    </div>
+                </div>
+
+                <q-input dense outlined v-model="Luserdata.name" label="Name" class="q-mt-lg" />
+                <q-input
+                    outlined
+                    v-model="Luserdata.bio"
+                    label="Bio"
+                    type="textarea"
+                    autogrow
+                    class="q-mt-sm"
                 />
             </div>
-        </div>
+        </q-card>
     </div>
 </template>
-
 
 <script>
 import { mapActions } from 'vuex'
 import { Notify } from 'quasar'
+
+const DEFAULT_AVATAR = 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center';
 
 export default {
     props: ['userData', 'isSameUser'],
@@ -42,6 +51,7 @@ export default {
         return {
             file: null,
             imageReadyPromise: null,
+            defaultAvatar: DEFAULT_AVATAR,
             Luserdata: {
                 ...this.userData
             }
@@ -89,15 +99,11 @@ export default {
                     await this.imageReadyPromise
                 }
 
-                // 调用更新用户数据的 API
                 const response = await this.UpdateUserData(this.Luserdata)
-                
-                // 发送事件通知父组件更新，只发送用户数据部分
                 const updatedUser = response?.user || response?.result || response
                 this.$emit('update-user', updatedUser)
                 this.$emit('EditProfile')
-                
-                // 显示保存成功提示
+
                 Notify.create({
                     message: '保存成功',
                     type: 'positive',
@@ -105,7 +111,6 @@ export default {
                 })
             } catch (error) {
                 console.error('Error saving profile:', error)
-                // 显示保存失败提示
                 Notify.create({
                     message: '保存失败，请重试',
                     type: 'negative',
@@ -116,3 +121,16 @@ export default {
     },
 }
 </script>
+
+<style lang="scss" scoped>
+.profile-cover {
+  height: 128px;
+  background: linear-gradient(120deg, #4F46E5 0%, #0EA5E9 55%, #F43F5E 100%);
+}
+
+.profile-avatar {
+  border: 4px solid #fff;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+  margin-top: -48px;
+}
+</style>

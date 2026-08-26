@@ -1,41 +1,37 @@
 <template>
-    <div class="row col-12 constrain">
-        <div class="col-4 text-center">
-            <q-avatar size="150px">
-                <img v-if="Luserdata?.imageUrl" :src="Luserdata?.imageUrl">
-                <img v-else src="https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center">
-            </q-avatar>
-        </div>
-        <!-- ------------------------------------------------------------------------------- -->
-        <div class="col-8 text-left">
-            <div class="text-h6 q-pa-lg" style="margin: auto;">
-                {{ Luserdata?.name }}
-                <q-btn v-if="isSameUser" @click="Edit" flat label="Edit" />
+    <div class="q-pa-md">
+        <q-card class="surface overflow-hidden">
+            <div class="profile-cover" />
 
-                <q-btn v-if="!isSameUser && !isUserFollowing" 
-                    @click="FollowOrUnFollow" flat style="color: #FF0080;" label="Follow" />
+            <div class="q-pa-md">
+                <div class="row items-center q-col-gutter-md">
+                    <div class="col-auto">
+                        <q-avatar size="88px" class="profile-avatar">
+                            <img v-if="Luserdata?.imageUrl" :src="Luserdata?.imageUrl">
+                            <img v-else :src="defaultAvatar">
+                        </q-avatar>
+                    </div>
+                    <div class="col">
+                        <div class="text-h5 text-weight-bold ellipsis">{{ Luserdata?.name }}</div>
+                        <div class="muted q-mt-xs ellipsis-2-lines">{{ Luserdata?.bio }}</div>
+                    </div>
+                </div>
 
-                <q-btn v-if="!isSameUser && isUserFollowing"
-                    @click="FollowOrUnFollow" flat class="primary" label="UN Follow" />
-            </div>
-            <q-separator inset />
-            <div class="text-subtitle1 q-pa-lg" style="margin: auto;">
-                {{ Luserdata?.bio }}
-                <div>
-                    <i>{{ userPosts?.length || 0 }} posts</i>
-                    <i> 
-                        <i v-if="Luserdata?.followers?.length > 0">
-                            {{ Luserdata?.followers?.length }}</i>
-                            followers
-                    </i>
-                    <i>
-                        <i v-if="Luserdata?.following?.length > 0">
-                            {{ Luserdata?.following?.length }}</i>
-                            following
-                    </i>
+                <div class="row wrap items-center justify-between q-mt-lg q-gutter-md">
+                    <div class="row q-gutter-lg">
+                        <span class="muted"><b class="text-dark">{{ userPosts?.length || 0 }}</b> Posts</span>
+                        <span class="muted"><b class="text-dark">{{ Luserdata?.followers?.length || 0 }}</b> Followers</span>
+                        <span class="muted"><b class="text-dark">{{ Luserdata?.following?.length || 0 }}</b> Following</span>
+                    </div>
+
+                    <div class="row q-gutter-sm">
+                        <q-btn v-if="isSameUser" label="Edit" color="primary" unelevated rounded @click="Edit" />
+                        <q-btn v-else-if="!isUserFollowing" label="Follow" color="accent" unelevated rounded @click="FollowOrUnFollow" />
+                        <q-btn v-else label="Following" color="grey-6" unelevated rounded @click="FollowOrUnFollow" />
+                    </div>
                 </div>
             </div>
-        </div>
+        </q-card>
     </div>
 </template>
 
@@ -43,12 +39,15 @@
 import { mapActions } from 'vuex'
 import { Notify } from 'quasar'
 
+const DEFAULT_AVATAR = 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center';
+
 export default {
     props: ['userData', 'userPosts', 'isSameUser'],
     data() {
         return {
             isUserFollowing: false,
-            Luserdata: {}
+            Luserdata: {},
+            defaultAvatar: DEFAULT_AVATAR,
         }
     },
     watch: {
@@ -56,7 +55,6 @@ export default {
             handler(newVal) {
                 if (newVal) {
                     this.Luserdata = { ...newVal }
-                    // 当 userData 变化时，重新检查关注状态
                     this.checkUserFollowing()
                 }
             },
@@ -91,15 +89,11 @@ export default {
                 }
 
                 const wasFollowing = this.isUserFollowing
-                
-                // 调用关注 API（该 API 会切换关注状态）
                 const updatedUser = await this.FollowUser(userId)
 
-                // 直接使用本次返回的数据更新本地展示，避免重复请求
                 this.Luserdata = { ...(updatedUser?.user || updatedUser || this.Luserdata) }
                 this.syncFollowingState()
-                
-                // 显示操作成功提示
+
                 Notify.create({
                     message: wasFollowing ? '取消关注成功' : '关注成功',
                     type: 'positive',
@@ -107,7 +101,6 @@ export default {
                 })
             } catch (error) {
                 console.error('Error following/unfollowing user:', error)
-                // 添加用户友好的错误提示
                 Notify.create({
                     message: '操作失败，请重试',
                     type: 'negative',
@@ -120,10 +113,22 @@ export default {
         }
     },
     mounted() {
-        // 只在非当前用户的资料页检查关注状态
         if (!this.isSameUser) {
             this.checkUserFollowing()
         }
     }
 }
 </script>
+
+<style lang="scss" scoped>
+.profile-cover {
+  height: 128px;
+  background: linear-gradient(120deg, #4F46E5 0%, #0EA5E9 55%, #F43F5E 100%);
+}
+
+.profile-avatar {
+  border: 4px solid #fff;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+  margin-top: -48px;
+}
+</style>

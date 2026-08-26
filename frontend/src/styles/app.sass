@@ -1,0 +1,86 @@
+// ============================================================
+//  Global application styling — shared look & feel
+// ============================================================
+
+body
+  background-color: #EEF2F7
+  color: #1E293B
+  -webkit-font-smoothing: antialiased
+  -moz-osx-font-smoothing: grayscale
+
+// Brand wordmark font
+.brand-font
+  font-family: 'Grand Hotel', cursive
+
+// Soft page surface used as background of content container
+.app-page-bg
+  background-color: #EEF2F7
+
+// Rounded, softly-shadowed surface (cards / panels)
+.surface
+  background: #fff
+  border-radius: 16px
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.06)
+
+.surface-hover
+  transition: box-shadow 0.2s ease, transform 0.2s ease
+  &:hover
+    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.12)
+    transform: translateY(-2px)
+
+// Consistent card look across the app
+.q-card
+  border-radius: 16px
+  border: 1px solid rgba(15, 23, 42, 0.06)
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.06)
+  &--flat
+    box-shadow: none
+
+// Section headings
+.section-title
+  font-size: 1.05rem
+  font-weight: 700
+  letter-spacing: -0.01em
+  color: #0F172A
+
+.muted
+  color: #64748B
+
+// Buttons: a touch more rounded, modern
+.q-btn
+  border-radius: 10px
+
+.q-btn--round
+  border-radius: 50%
+
+// Inputs & avatars rounded to match the theme
+.q-field--outlined .q-field__control, .q-field--filled .q-field__control
+  border-radius: 12px
+
+// Refined scrollbar
+::-webkit-scrollbar
+  width: 8px
+  height: 8px
+
+::-webkit-scrollbar-track
+  background: transparent
+
+::-webkit-scrollbar-thumb
+  background: rgba(100, 116, 139, 0.45)
+  border-radius: 999px
+
+// Mobile bottom navigation
+.bottom-nav
+  background: rgba(255, 255, 255, 0.92)
+  backdrop-filter: blur(10px)
+  border-top: 1px solid rgba(15, 23, 42, 0.08)
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06)
+
+  .q-btn
+    margin: 0
+
+// Hide scrollbar for horizontal chip rows
+.no-scrollbar
+  scrollbar-width: none
+  &::-webkit-scrollbar
+    display: none
