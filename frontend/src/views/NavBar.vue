@@ -4,8 +4,8 @@
 
          <!-- Brand: desktop / tablet -->
          <q-btn flat to="/" class="gt-sm">
-            <q-icon left size="2.2em" name="eva-camera-outline" color="grey-9" />
-            <q-toolbar-title class="brand-font text-grey-10 text-bold" style="font-size:1.5rem;">Home</q-toolbar-title>
+            <q-icon left size="2.2em" name="eva-camera-outline" class="brand-icon" />
+            <q-toolbar-title class="brand-font brand-text text-bold" style="font-size:1.5rem;">Home</q-toolbar-title>
          </q-btn>
 
          <q-separator class="gt-sm" vertical spaced />
@@ -76,8 +76,8 @@
          <!-- Brand + hamburger: mobile only -->
          <q-btn flat round icon="eva-menu-outline" @click="mobileMenuOpen = !mobileMenuOpen" class="lt-md" />
          <q-btn flat to="/" class="lt-md">
-            <q-icon left size="1.8em" name="eva-camera-outline" color="grey-9" />
-            <q-toolbar-title class="brand-font text-grey-10 text-bold" style="font-size:1.25rem;">Home</q-toolbar-title>
+            <q-icon left size="1.8em" name="eva-camera-outline" class="brand-icon" />
+            <q-toolbar-title class="brand-font brand-text text-bold" style="font-size:1.25rem;">Home</q-toolbar-title>
          </q-btn>
 
          <q-space class="lt-md" />
