@@ -8,41 +8,47 @@
 			<div class="col-12 col-md-6 q-mx-auto">
 				<div class="q-pa-md">
 
-					<!-- Skeletons -->
-					<template v-if="!load">
-						<div v-for="i in 3" :key="i" class="surface q-mb-md q-pa-md">
-							<div class="row items-center">
-								<q-skeleton type="QAvatar" size="48px" />
-								<div class="q-ml-md col">
-									<q-skeleton type="text" style="width: 40%" />
-									<q-skeleton type="text" style="width: 25%" />
+					<transition name="fade" mode="out-in">
+						<!-- Skeletons -->
+						<div v-if="!load" key="skeleton">
+							<div v-for="i in 3" :key="i" class="surface q-mb-md q-pa-md skeleton-card">
+								<div class="row items-center">
+									<q-skeleton type="QAvatar" size="48px" animation="wave" />
+									<div class="q-ml-md col">
+										<q-skeleton type="text" animation="wave" style="width: 40%" />
+										<q-skeleton type="text" animation="wave" style="width: 25%" />
+									</div>
+								</div>
+								<q-skeleton height="200px" square animation="wave" class="q-mt-md rounded-borders" />
+								<div class="row q-mt-md q-gutter-sm">
+									<q-skeleton type="QBtn" animation="wave" />
+									<q-skeleton type="QBtn" animation="wave" />
+									<q-skeleton type="QBtn" animation="wave" />
 								</div>
 							</div>
-							<q-skeleton height="200px" square class="q-mt-md rounded-borders" />
-							<div class="row q-mt-md q-gutter-sm">
-								<q-skeleton type="QBtn" />
-								<q-skeleton type="QBtn" />
-								<q-skeleton type="QBtn" />
-							</div>
-						</div>
-					</template>
-
-					<!-- Posts -->
-					<template v-else>
-						<Post v-for="post in posts" :key="post._id" :post="post" />
-
-						<div v-if="loadingMore" class="q-pa-lg text-center">
-							<q-spinner color="primary" size="3em" />
-							<div class="q-mt-md muted">Loading more posts...</div>
 						</div>
 
-						<div v-if="hasReachedEnd && posts.length > 0" class="q-pa-md text-center muted">
-							<q-icon name="eva-inbox-outline" size="24px" />
-							<div class="q-mt-sm">No More Posts</div>
-						</div>
+						<!-- Posts -->
+						<div v-else key="posts">
+							<q-infinite-scroll @load="onLoad" :offset="250">
+								<Post v-for="post in posts" :key="post._id" :post="post" />
 
-						<div class="bottom-spacer" />
-					</template>
+								<template v-slot:loading>
+									<div class="q-pa-lg text-center">
+										<q-spinner color="primary" size="3em" />
+										<div class="q-mt-md muted">Loading more posts...</div>
+									</div>
+								</template>
+
+								<template v-slot:end v-if="posts.length > 0">
+									<div class="q-pa-md text-center muted">
+										<q-icon name="eva-inbox-outline" size="24px" />
+										<div class="q-mt-sm">No More Posts</div>
+									</div>
+								</template>
+							</q-infinite-scroll>
+						</div>
+					</transition>
 
 				</div>
 			</div>
@@ -83,6 +89,10 @@ export default {
 		...mapActions({ getPosts: 'GetAllPosts' }),
 		async OnPostCreated() {
 			this.current = 1
+			this.max = 0
+			this.posts = []
+			this.hasReachedEnd = false
+			this.load = false
 			await this.GetAllPosts()
 		},
 		async GetAllPosts(append = false) {
@@ -108,44 +118,50 @@ export default {
 				console.error("Error loading posts", error)
 			}
 		},
-		async loadMorePosts(){
-			if (this.loadingMore || this.hasReachedEnd) {
+		async onLoad(index, done) {
+			if (this.hasReachedEnd) {
+				done(true)
 				return
 			}
-
-			if (this.current < this.max) {
-				this.loadingMore = true
-				this.current++
-
-				try {
+			try {
+				if (this.current < this.max) {
+					this.current++
 					await this.GetAllPosts(true)
-					await new Promise(resolve => setTimeout(resolve, 1000))
-				} catch (error) {
-					console.error('error loading more posts', error)
-					this.current--
-				} finally {
-					this.loadingMore = false
 				}
-			}
-		},
-		handleScroll(){
-			const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-			const windowHeight = window.innerHeight
-			const documentHeight = document.documentElement.scrollHeight
-
-			if (scrollTop + windowHeight >= documentHeight - 200) {
-				this.loadMorePosts()
+				done(this.hasReachedEnd)
+			} catch (error) {
+				console.error('error loading more posts', error)
+				done(true)
 			}
 		},
 	},
 	async mounted() {
-		setTimeout(async () => {
-			await this.GetAllPosts()
-			window.addEventListener('scroll', this.handleScroll)
-		}, 1000)
+		await this.GetAllPosts()
 	},
-	beforeUnmount(){
-		window.removeEventListener('scroll', this.handleScroll)
-	}
 }
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+	transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+	opacity: 0;
+}
+
+.skeleton-card {
+	animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+	0%, 100% {
+		opacity: 0.55;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+</style>
