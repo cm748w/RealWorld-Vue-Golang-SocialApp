@@ -39,7 +39,7 @@
                     <!-- Chat pane -->
                     <div class="chat-pane" v-if="selectedUser != null">
                         <div class="q-pa-sm row items-center q-gutter-sm chat-pane-header">
-                            <q-btn v-if="isMobile" flat round icon="eva-arrow-back" color="" @click="selectedUser = null" />
+                            <q-btn v-if="isMobile" flat round icon="eva-arrow-back" class="btn-inherit" @click="selectedUser = null" />
                             <q-avatar>
                                 <img :src="selectedUser.imageUrl || defaultAvatar" />
                             </q-avatar>
