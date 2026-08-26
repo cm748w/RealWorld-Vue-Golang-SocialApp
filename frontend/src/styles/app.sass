@@ -12,6 +12,10 @@ body
 .brand-font
   font-family: 'Grand Hotel', cursive
 
+// Adaptive brand text/icon & stat numbers (dark in light mode, light in dark mode)
+.brand-text, .brand-icon, .stat-num
+  color: #0F172A
+
 // Soft page surface used as background of content container
 .app-page-bg
   background-color: #EEF2F7
@@ -116,6 +120,10 @@ body.body--dark
     color: #94A3B8
 
   .section-title
+    color: #F1F5F9
+
+  // adaptive brand & stat numbers
+  .brand-text, .brand-icon, .stat-num
     color: #F1F5F9
 
   // bottom navigation
