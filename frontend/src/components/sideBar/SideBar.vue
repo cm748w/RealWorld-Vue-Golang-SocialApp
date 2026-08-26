@@ -10,7 +10,7 @@
                 </q-item-section>
                 <q-item-section>
                     <q-item-label class="text-subtitle1 text-weight-bold">{{ GetUserData?.result?.name || 'Welcome' }}</q-item-label>
-                    <q-item-label caption>{{ GetUserData?.result?.email || 'Sign in to get started' }}</q-item-label>
+                    <q-item-label caption v-if="!GetUserData?.result">Sign in to get started</q-item-label>
                 </q-item-section>
             </q-item>
 

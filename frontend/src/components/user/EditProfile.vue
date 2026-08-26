@@ -131,6 +131,5 @@ export default {
 .profile-avatar {
   border: 4px solid #fff;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
-  margin-top: -48px;
 }
 </style>
