@@ -59,6 +59,14 @@ body
   border: 1px solid rgba(15, 23, 42, 0.14)
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08)
 
+// Active nav item: light highlight with readable dark text (icons/labels)
+.nav-active
+  background: #F1F5F9 !important
+  color: #0F172A !important
+
+  .q-item__label, .q-item__label--caption
+    color: #0F172A !important
+
 // Inputs & avatars rounded to match the theme
 .q-field--outlined .q-field__control, .q-field--filled .q-field__control
   border-radius: 12px
@@ -138,3 +146,18 @@ body.body--dark
   // grey active/unread highlight -> dark surface highlight
   .bg-grey-3
     background: #1E293B !important
+
+  // white primary buttons -> dark surface button with light text in dark mode
+  .q-btn.bg-primary
+    background: #1E293B !important
+    color: #E2E8F0 !important
+    border-color: rgba(255, 255, 255, 0.12)
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4)
+
+  // active nav item in dark mode
+  .nav-active
+    background: #1E293B !important
+    color: #E2E8F0 !important
+
+    .q-item__label, .q-item__label--caption
+      color: #E2E8F0 !important

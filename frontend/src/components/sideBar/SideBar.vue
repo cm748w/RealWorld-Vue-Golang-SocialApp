@@ -65,8 +65,8 @@ export default {
     },
     methods: {
         activeClass(path) {
-            if (path === '/') return this.$route.path === '/' ? 'bg-grey-3' : ''
-            return this.$route.path.startsWith(path) ? 'bg-grey-3' : ''
+            if (path === '/') return this.$route.path === '/' ? 'nav-active' : ''
+            return this.$route.path.startsWith(path) ? 'nav-active' : ''
         }
     }
 }

@@ -1,8 +1,6 @@
 <template>
     <div class="q-pa-md">
         <q-card class="surface overflow-hidden">
-            <div class="profile-cover" />
-
             <div class="q-pa-md">
                 <div class="row items-center q-col-gutter-md">
                     <div class="col-auto">
@@ -123,11 +121,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.profile-cover {
-  height: 128px;
-  background: linear-gradient(120deg, #F1F5F9 0%, #E2E8F0 55%, #CBD5E1 100%);
-}
-
 .profile-avatar {
   box-shadow: 0 0 0 4px #fff, 0 4px 16px rgba(15, 23, 42, 0.15);
 }
