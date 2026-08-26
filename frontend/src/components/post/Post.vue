@@ -200,7 +200,7 @@ export default {
   }
 
   .post-avatar {
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.35);
   }
 
   .post-img {
