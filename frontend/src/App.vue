@@ -1,10 +1,51 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <q-layout view="hHh LpR lFf" class="app-shell">
     <nav-bar />
-    <q-page-container class="bg-grey-1">
-      <router-view />
 
+    <q-page-container>
+      <router-view />
     </q-page-container>
+
+    <!-- Mobile / tablet bottom navigation -->
+    <q-footer
+      v-if="isAuthed && isMobileNav"
+      class="bottom-nav q-py-xs"
+    >
+      <div class="row justify-around q-pa-xs">
+        <q-btn
+          flat round
+          size="md"
+          :to="'/'"
+          :icon="ActiveRoute('/') ? 'eva-home' : 'eva-home-outline'"
+          :color="ActiveRoute('/') ? 'primary' : 'grey-7'"
+          aria-label="Home"
+        />
+        <q-btn
+          flat round
+          size="md"
+          :to="profilePath"
+          :icon="ActiveRoute('/profile') ? 'eva-person' : 'eva-person-outline'"
+          :color="ActiveRoute('/profile') ? 'primary' : 'grey-7'"
+          aria-label="Profile"
+        />
+        <q-btn
+          flat round
+          size="md"
+          :to="'/Chat'"
+          :icon="ActiveRoute('/Chat') ? 'eva-message-square' : 'eva-message-square-outline'"
+          :color="ActiveRoute('/Chat') ? 'primary' : 'grey-7'"
+          aria-label="Messages"
+        />
+        <q-btn
+          flat round
+          size="md"
+          :to="'/Notification'"
+          :icon="ActiveRoute('/Notification') ? 'eva-bell' : 'eva-bell-outline'"
+          :color="ActiveRoute('/Notification') ? 'primary' : 'grey-7'"
+          aria-label="Notifications"
+        />
+      </div>
+    </q-footer>
   </q-layout>
 </template>
 
@@ -19,7 +60,27 @@ export default {
     }
   },
   computed: {
-    ...mapGetters("auth", ["GetUserData"])
+    ...mapGetters("auth", ["GetUserData"]),
+    isAuthed() {
+      return !!this.GetUserData?.result
+    },
+    isMobileNav() {
+      // Bottom navigation only below md (phone + tablet)
+      return this.$q.screen.lt.md
+    },
+    profilePath() {
+      const id = this.GetUserData?.result?._id
+      return id ? `/profile/${id}` : '/'
+    }
+  },
+  methods: {
+    ...mapMutations("auth", ["SetData"]),
+    ...mapActions("RealTimeNotify", ["connectToNotify","StopConnectionToNotify"]),
+    ...mapActions(["createChatConnection","StopConnectionToChat"]),
+    ActiveRoute(path) {
+      if (path === '/') return this.$route.path === '/'
+      return this.$route.path.startsWith(path)
+    }
   },
   watch: {
     GetUserData(newVal) {
@@ -39,11 +100,6 @@ export default {
       this.wasAuthed = isNowAuthed
     }
   },
-  methods: {
-    ...mapMutations("auth", ["SetData"]),
-    ...mapActions("RealTimeNotify", ["connectToNotify","StopConnectionToNotify"]),
-    ...mapActions(["createChatConnection","StopConnectionToChat"]),
-  },
   mounted() {
     this.SetData()
     this.connectToNotify()
@@ -59,23 +115,27 @@ export default {
 </script>
 
 <style lang="scss">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+.app-shell {
+  background-color: #f1f5f9;
+
+  .q-page-container {
+    // Give room so the mobile bottom nav never hides content
+    min-height: 100%;
+  }
 }
 
-nav {
-  padding: 30px;
+#app {
+  font-family: 'Inter', 'Roboto', Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #1e293b;
+}
 
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
+@media (max-width: 1023px) {
+  .q-layout {
+    // Compensate the bottom navigation height
+    .q-page-container {
+      padding-bottom: 64px;
     }
   }
 }

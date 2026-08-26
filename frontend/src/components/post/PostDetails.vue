@@ -1,17 +1,21 @@
 <template>
     <q-page class="constrain q-pa-md">
-        <div class="row q-col-gutter-lg">
-            <div class="col-3"></div>
-            <div class="col-6" v-if="post" >
-                <div class="q-pa-md q-gutter-sm" v-if="!EditPost" >
-                    <q-btn v-if="IsSameUser" color="primary" icon="eva-edit" @click="EditPost = !EditPost" label="Edit Post" />
+        <div class="row justify-center">
+            <div class="col-12 col-md-6 q-mx-auto">
+                <div class="q-pa-md q-gutter-sm" v-if="post && !EditPost">
+                    <q-btn v-if="IsSameUser" color="primary" unelevated rounded icon="eva-edit" label="Edit Post"
+                        @click="EditPost = !EditPost" />
                 </div>
-                <Post :post="post" :EditPost="EditPost" @changeEdit="EditPost = !EditPost" />
+
+                <Post v-if="post" :post="post" :EditPost="EditPost" @changeEdit="EditPost = !EditPost" />
+
+                <div v-else class="q-pa-lg text-center muted">
+                    <q-spinner color="primary" size="3em" />
+                    <div class="q-mt-md">Loading post...</div>
+                </div>
             </div>
-            <div class="col-3"></div>
         </div>
     </q-page>
-
 </template>
 
 <script>

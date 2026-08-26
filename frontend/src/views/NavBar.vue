@@ -1,173 +1,147 @@
 <template>
    <q-header class="bg-white text-grey-10" bordered>
-      <q-toolbar class="constrain">
-         <q-btn flat to="/" class="gt-xs">
-            <q-icon left size="3em" name="eva-camera-outline" />
-            <q-toolbar-title class="text grand-hotel text-bold">Home</q-toolbar-title>
+      <q-toolbar class="constrain q-pa-sm">
+
+         <!-- Brand: desktop / tablet -->
+         <q-btn flat to="/" class="gt-sm">
+            <q-icon left size="2.2em" name="eva-camera-outline" color="primary" />
+            <q-toolbar-title class="brand-font text-primary text-bold" style="font-size:1.5rem;">Home</q-toolbar-title>
          </q-btn>
 
-         <q-separator class="large-screen-only gt-xs" vertical spaces />
+         <q-separator class="gt-sm" vertical spaced />
 
-         <q-toolbar-title class="text-center gt-xs">
-            <q-input bottom-slots class="nuks" label="search" @keyup.enter="GoSearch($event)">
+         <!-- Search: desktop / tablet -->
+         <q-toolbar-title class="text-center gt-sm">
+            <q-input dense outlined class="search-input" label="Search"
+               @keyup.enter="GoSearch($event)">
             </q-input>
          </q-toolbar-title>
 
-         <q-btn round 
-            v-show="GetUserData?.result" 
+         <!-- Chat -->
+         <q-btn round flat
+            v-show="GetUserData?.result"
             @click="GoToChat"
-            :icon="chatUnreadCount > 0 ? 'eva-message-square-outline' : 'eva-message-square'"
-            :color="chatUnreadCount > 0 ? 'primary' : 'dark'"
-            class="gt-xs"
+            :icon="chatUnreadCount > 0 ? 'eva-message-square' : 'eva-message-square-outline'"
+            :color="chatUnreadCount > 0 ? 'primary' : 'grey-8'"
+            class="gt-sm"
             >
             <q-badge v-if="chatUnreadCount > 0" color="negative" floating rounded :label="chatUnreadCount"/>
          </q-btn>
 
-         <q-btn round
-            v-show="GetUserData?.result" 
+         <!-- Notifications -->
+         <q-btn round flat
+            v-show="GetUserData?.result"
             @click="GoToNotification"
-            :icon="notificationNum > 0 ? 'eva-bell-outline' : 'eva-bell'"
-            :color="notificationNum > 0 ? 'primary' : 'dark'"
-            class="gt-xs" 
+            :icon="notificationNum > 0 ? 'eva-bell' : 'eva-bell-outline'"
+            :color="notificationNum > 0 ? 'primary' : 'grey-8'"
+            class="gt-sm"
             >
             <q-badge v-if="notificationNum > 0" floating color="negative" rounded :label="notificationNum"/>
          </q-btn>
 
-         <q-btn v-show="GetUserData?.result" round class="gt-xs">
-            <q-avatar size="42px" v-if="GetUserData?.result?.imageUrl">
+         <!-- Avatar menu: desktop / tablet -->
+         <q-btn v-show="GetUserData?.result" round flat class="gt-sm">
+            <q-avatar size="36px" v-if="GetUserData?.result?.imageUrl">
                <img :src="GetUserData?.result?.imageUrl">
             </q-avatar>
-            <q-avatar size="42px" v-else>
-               <img
-                  src="https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center">
+            <q-avatar size="36px" v-else>
+               <img :src="defaultAvatar">
             </q-avatar>
             <q-menu>
-               <q-list style="min-width: 100px;">
+               <q-list style="min-width: 170px;">
                   <q-item clickable v-close-popup>
                      <q-item-section @click="Profile">Profile</q-item-section>
                   </q-item>
                   <q-separator />
-                  <q-item clickable v-close-popup>
-                     <q-item-section @click="LogUserOut">Logout</q-item-section>
+                  <q-item clickable v-close-popup @click="LogUserOut">
+                     <q-item-section>Logout</q-item-section>
                   </q-item>
                </q-list>
             </q-menu>
          </q-btn>
-         <q-btn flat round icon="eva-menu-outline" @click="mobileMenuOpen = !mobileMenuOpen" class="lt-sm" />
-         <q-btn flat to="/" class="lt-sm">
-            <q-icon left size="2em" name="eva-camera-outline" />
-            <q-toolbar-title class="text grand-hotel text-bold">Home</q-toolbar-title>
+
+         <!-- Brand + hamburger: mobile only -->
+         <q-btn flat round icon="eva-menu-outline" @click="mobileMenuOpen = !mobileMenuOpen" class="lt-md" />
+         <q-btn flat to="/" class="lt-md">
+            <q-icon left size="1.8em" name="eva-camera-outline" color="primary" />
+            <q-toolbar-title class="brand-font text-primary text-bold" style="font-size:1.25rem;">Home</q-toolbar-title>
          </q-btn>
 
-         <q-space class="lt-sm" />
+         <q-space class="lt-md" />
 
-         <q-btn v-show="GetUserData?.result" round class="lt-sm">
+         <!-- Avatar: mobile only -->
+         <q-btn v-show="GetUserData?.result" round flat class="lt-md" @click="handleProfileClick">
             <q-avatar size="32px" v-if="GetUserData?.result?.imageUrl">
                <img :src="GetUserData?.result?.imageUrl">
             </q-avatar>
             <q-avatar size="32px" v-else>
-               <img src="https://cdn-icons-png.flaticon.com/512/3237/3237472.png">
+               <img :src="defaultAvatar">
             </q-avatar>
-
-            <q-badge 
-               v-if="(notificationNum + unReadedMessages) > 0" 
-               color="negative" 
-               floating 
-               rounded
-               :label="notificationNum + unReadedMessages" 
-            />
-
-            <q-menu>
-               <q-list style="min-width: 120px;">
-                  <q-item clickable v-close-popup>
-                     <q-item-section @click="Profile">Profile</q-item-section>
-                  </q-item>
-                  <q-item clickable v-close-popup>
-                     <q-item-section @click="LogUserOut">Logout</q-item-section>
-                  </q-item>
-               </q-list>
-            </q-menu>
-
          </q-btn>
+
       </q-toolbar>
 
+      <!-- Mobile drawer -->
       <q-drawer
          v-model="mobileMenuOpen"
          overlay
-         :width="200"
+         :width="250"
          bordered
-         class="bg-grey-1"
+         class="bg-white"
       >
+         <div class="q-pa-md">
+            <q-item class="q-mb-sm" v-if="GetUserData?.result">
+               <q-item-section avatar>
+                  <q-avatar size="48px">
+                     <img :src="GetUserData?.result?.imageUrl || defaultAvatar">
+                  </q-avatar>
+               </q-item-section>
+               <q-item-section>
+                  <q-item-label class="text-weight-bold text-subtitle1">{{ GetUserData?.result?.name }}</q-item-label>
+                  <q-item-label caption>{{ GetUserData?.result?.email }}</q-item-label>
+               </q-item-section>
+            </q-item>
 
-         <!-- search -->
-         <q-item>
-            <q-item-section>
-               <q-input
-               dense
-               outlined
-               label="Search"
-               @keyup.enter="GoSearch($event); mobileMenuOpen = false"
-               />
-            </q-item-section>
-         </q-item>
-
-         <q-separator />
-
-         <!-- profile -->
-         <q-item clickable v-ripple @click="handleProfileClick" v-if="GetUserData?.result">
-            <q-item-section avatar>
-               <q-icon name="eva-person-outline" />
-            </q-item-section>
-            <q-item-section>Profile</q-item-section>
-         </q-item>
-
-         <!-- message with bage -->
-         <q-item clickable v-ripple @click="handleChatClick" v-if="GetUserData?.result">
-            <q-item-section avatar>
-               <dev class="mobile-icon-badge">
-                  <q-icon name="eva-message-square-outline" />
-                  <q-badge 
-                    v-if="unReadedMessages > 0"
-                    color="negative"
-                    :label="unReadedMessages" 
+            <q-item>
+               <q-item-section>
+                  <q-input
+                     dense
+                     outlined
+                     label="Search"
+                     @keyup.enter="GoSearch($event); mobileMenuOpen = false"
                   />
-               </dev>
-            </q-item-section>
-            <q-item-section>Messages</q-item-section>
-         </q-item>
+               </q-item-section>
+            </q-item>
 
-         <!-- notification with bade -->
-         <q-item clickable v-ripple @click="handleNotificationClick" v-if="GetUserData?.result">
-            <q-item-section avatar>
-               <dev class="mobile-icon-badge">
-                  <q-icon name="eva-bell-outline" />
-                  <q-badge 
-                    v-if="notificationNum > 0"
-                    color="negative"
-                    :label="notificationNum" 
-                  />
-               </dev>
-            </q-item-section>
-            <q-item-section>Notifications</q-item-section>
-         </q-item>
+            <q-separator class="q-my-sm" />
 
-         <q-separator />
+            <q-item clickable v-ripple @click="handleProfileClick" v-if="GetUserData?.result">
+               <q-item-section avatar><q-icon name="eva-person-outline" color="primary"/></q-item-section>
+               <q-item-section>Profile</q-item-section>
+            </q-item>
 
-         <!-- logout -->
-         <q-item clickable v-ripple @click="handleLogoutClick" v-if="GetUserData?.result">
-            <q-item-section avatar>
-               <q-icon name="eva-log-out-outline" />
-            </q-item-section>
-            <q-item-section>Logout</q-item-section>
-         </q-item>
+            <q-item clickable v-ripple @click="handleChatClick" v-if="GetUserData?.result">
+               <q-item-section avatar><q-icon name="eva-message-square-outline" color="primary"/></q-item-section>
+               <q-item-section>Messages</q-item-section>
+            </q-item>
 
-         <!-- login for none auth users -->
-         <q-item clickable v-ripple to="/Auth" v-else>
-            <q-item-section avatar>
-               <q-icon name="eva-log-in-outline" />
-            </q-item-section>
-            <q-item-section>Login</q-item-section>
-         </q-item>
+            <q-item clickable v-ripple @click="handleNotificationClick" v-if="GetUserData?.result">
+               <q-item-section avatar><q-icon name="eva-bell-outline" color="primary"/></q-item-section>
+               <q-item-section>Notifications</q-item-section>
+            </q-item>
+
+            <q-separator class="q-my-sm" />
+
+            <q-item clickable v-ripple @click="handleLogoutClick" v-if="GetUserData?.result">
+               <q-item-section avatar><q-icon name="eva-log-out-outline" color="negative"/></q-item-section>
+               <q-item-section>Logout</q-item-section>
+            </q-item>
+
+            <q-item clickable v-ripple to="/Auth" v-else>
+               <q-item-section avatar><q-icon name="eva-log-in-outline" color="primary"/></q-item-section>
+               <q-item-section>Login</q-item-section>
+            </q-item>
+         </div>
       </q-drawer>
 
    </q-header>
@@ -175,12 +149,15 @@
 
 <script>
 import { mapGetters, mapMutations, mapActions, mapState } from 'vuex';
+
+const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3237/3237472.png';
+
 export default {
    name: 'NavBar',
    data() {
       return {
-         mobileMenuOpen: false
-         // userData: null,
+         mobileMenuOpen: false,
+         defaultAvatar: DEFAULT_AVATAR
       }
    },
    computed: {
@@ -288,28 +265,10 @@ export default {
 </script>
 
 <style lang="sass">
-.nuks
-   width:250px
-   text-align: center
-   display: inline-block !important
-
-.q-toolbar-title
-   display: flex
-   align-items: center
-
-.q-btn
-   margin-left: 10px
-
-.mobile-icon-badge
-   position: relative
-   display: inline-block
-
-.q-badge
-   position: absolute
-   top: -6px
-   right: -6px
-   min-width: 18px
-   height: 18px
-   font-size: 11px
-
+.search-input
+   width: 100%
+   max-width: 420px
+   margin: 0 auto
+   .q-field__control
+      border-radius: 999px
 </style>

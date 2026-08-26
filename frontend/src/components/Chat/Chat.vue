@@ -1,19 +1,21 @@
 <template>
     <q-page class="constrain q-pa-md">
-        <div class="row q-col-gutter-lg">
-            <div class="col-12 chat-container">
-                <div class="user-list">
-                    <div class="q-pa-md">
+        <div class="row">
+            <div class="col-12">
+                <div class="chat-shell surface">
+
+                    <!-- Contact list -->
+                    <div class="chat-contact" v-show="!isMobile || !selectedUser">
                         <q-toolbar class="bg-primary text-white shadow-1">
-                            <q-toolbar-title>Following & Followers</q-toolbar-title>
+                            <q-toolbar-title class="text-subtitle1">Messages</q-toolbar-title>
                         </q-toolbar>
 
-                        <q-list bordered>
+                        <q-list separator class="q-pa-sm">
                             <q-item @click="selectUser(contact)" v-for="contact in contacts" :key="contact._id"
-                                class="q-my-sm" clickable v-ripple>
+                                class="q-my-xs" clickable v-ripple>
                                 <q-item-section avatar>
                                     <q-avatar v-if="!contact.imageUrl">
-                                        <img src="https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center" />
+                                        <img :src="defaultAvatar" />
                                     </q-avatar>
                                     <q-avatar v-else>
                                         <img :src="contact?.imageUrl" />
@@ -30,43 +32,53 @@
                                 <q-item-section side v-if="contact.unReadedmessage && contact.unReadedmessage > 0">
                                     <q-badge color="negative" rounded :label="contact?.unReadedmessage" />
                                 </q-item-section>
-
-
                             </q-item>
                         </q-list>
                     </div>
-                </div>
 
-                <!-- chat box -->
-                <div class="chat-messages" v-if="selectedUser != null" style="background: white;">
-                    <div class="q-pa-md row justify-center" style="overflow-y: auto; max-height: 400px;"
-                        ref="messageContainer" @scroll="handleScroll">
-                        <div v-for="msg in messageBetweenUsers" :key="msg._id" style="width: 100%;">
-                            <q-chat-message
-                                :name="msg.sender === MainUserData._id ? MainUserData.name : selectedUser.name"
-                                :avatar="msg.sender === MainUserData._id ? (MainUserData.imageUrl || 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center') : (selectedUser.imageUrl || 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center')"
-                                :text="[msg.content]" :sent="msg.sender === MainUserData._id ? true : false" />
+                    <!-- Chat pane -->
+                    <div class="chat-pane" v-if="selectedUser != null">
+                        <div class="q-pa-sm row items-center q-gutter-sm chat-pane-header">
+                            <q-btn v-if="isMobile" flat round icon="eva-arrow-back" color="grey-8" @click="selectedUser = null" />
+                            <q-avatar>
+                                <img :src="selectedUser.imageUrl || defaultAvatar" />
+                            </q-avatar>
+                            <div>
+                                <div class="text-weight-bold text-subtitle2">{{ selectedUser.name }}</div>
+                                <div class="muted text-caption">{{ selectedUser.isOnline ? 'Online' : 'Offline' }}</div>
+                            </div>
                         </div>
+
+                        <q-separator />
+
+                        <div class="message-container" ref="messageContainer" @scroll="handleScroll">
+                            <div v-for="msg in messageBetweenUsers" :key="msg._id" style="width: 100%;">
+                                <q-chat-message
+                                    :name="msg.sender === MainUserData._id ? MainUserData.name : selectedUser.name"
+                                    :avatar="msg.sender === MainUserData._id ? (MainUserData.imageUrl || defaultAvatar) : (selectedUser.imageUrl || defaultAvatar)"
+                                    :text="[msg.content]" :sent="msg.sender === MainUserData._id ? true : false" />
+                            </div>
+                        </div>
+
+                        <q-separator spaced />
+                        <q-input outlined v-model="messageToSend.text" @keyup.enter="handleSendMessage"
+                            label="write message.." class="q-pa-sm">
+                            <q-btn v-if="messageToSend.text != ''" @click="handleSendMessage" flat round color="primary"
+                                icon="eva-arrow-right" />
+                        </q-input>
                     </div>
 
-                    <q-separator spaced />
-                    <q-input outlined v-model="messageToSend.text" @keyup.enter="handleSendMessage"
-                        label="write message..">
-                        <q-btn v-if="messageToSend.text != ''" @click="handleSendMessage" flat round color="primary"
-                            icon="eva-arrow-right" />
-                    </q-input>
-
                 </div>
-
             </div>
         </div>
     </q-page>
-
-
 </template>
 
 <script>
 import { mapActions, mapGetters, mapState } from 'vuex';
+
+const DEFAULT_AVATAR = 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center';
+
 export default {
     name: 'ChatComponent',
     data() {
@@ -78,12 +90,16 @@ export default {
             selectedUser: null,
             MainUserData: {},
             uniqueOnlineUsers: [],
+            defaultAvatar: DEFAULT_AVATAR,
         }
     },
     computed: {
         ...mapGetters('users', ['GetUserFollowersFollowing', 'GetUser']),
         ...mapGetters('auth', ['GetUserData']),
         ...mapState(["RealTimeChat"]),
+        isMobile() {
+            return this.$q.screen.lt.md
+        }
     },
     watch: {
         "RealTimeChat.onlineFriends": function (online) {
@@ -154,7 +170,6 @@ export default {
             const container = this.$refs.messageContainer
             if (!container) return
             if (container.scrollTop === 0) {
-                // scrolled to the top
                 this.GetOldestMessagesBetweenUsers()
             }
         },
@@ -205,13 +220,11 @@ export default {
             if (!this.MainUserData._id) return
             const unreadPayload = await this.GetUnreadedMessageNum(this.MainUserData._id)
             var messages = unreadPayload?.messages || []
-            
-            // 第一步：清零所有联系人的未读数
+
             this.contacts.forEach(user => {
                 user.unReadedmessage = 0
             })
-            
-            // 第二步：只根据后端返回的消息列表进行更新
+
             messages.forEach(msg => {
                 this.contacts.forEach(user => {
                     if (String(msg.otherUserId) == String(user._id)) {
@@ -219,8 +232,7 @@ export default {
                     }
                 })
             })
-            
-            // 第三步：同步全局未读总数
+
             this.syncGlobalUnreadCount()
         },
         syncGlobalUnreadCount() {
@@ -231,11 +243,8 @@ export default {
         },
         async GetUsList() {
             this.contacts = []
-            // Call the FetchUserFollowersFollowing action to fetch and cache the data
             await this.$store.dispatch('users/FetchUserFollowersFollowing')
-            // Now read from the getter
             var glist = this.GetUserFollowersFollowing || []
-            // ensure fields exist so Vue reactivity works (Vue2 compatibility)
             this.contacts = (glist || []).map(c => ({
                 ...c,
                 isOnline: !!c.isOnline,
@@ -263,15 +272,14 @@ export default {
             if (Array.isArray(msgs)) {
                 this.messageBetweenUsers.push(...msgs)
             }
-            
-            // 获取该联系人当前的未读数快照，传给标记已读函数
+
             let unreadSnapshot = 0
             this.contacts.forEach((contact) => {
                 if (String(contact._id) === String(user._id)) {
                     unreadSnapshot = Number(contact.unReadedmessage) || 0
                 }
             })
-            
+
             setTimeout(() => {
                 this.scrollDownFunction()
                 this.CallMarkMsgAsReaded(user, unreadSnapshot)
@@ -312,16 +320,60 @@ export default {
 
     },
 }
-
 </script>
 
-<style scoped>
-.chat-container {
-    display: flex;
+<style lang="scss" scoped>
+.chat-shell {
+  display: flex;
+  height: calc(100vh - 200px);
+  min-height: 520px;
+  overflow: hidden;
 }
 
-.chat-messages {
-    flex: 1;
-    padding: 10px;
+.chat-contact {
+  width: 320px;
+  flex: 0 0 320px;
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.chat-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chat-pane-header {
+  background: #fff;
+}
+
+.message-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+// Mobile / tablet: stack list + conversation
+@media (max-width: 1023px) {
+  .chat-shell {
+    flex-direction: column;
+    height: calc(100vh - 160px);
+    min-height: 480px;
+  }
+
+  .chat-contact {
+    width: 100%;
+    flex: 1 1 auto;
+    border-right: none;
+  }
+
+  .chat-pane {
+    width: 100%;
+    height: 100%;
+  }
 }
 </style>
