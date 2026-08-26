@@ -179,7 +179,7 @@ export default {
 
 <style lang="scss" scoped>
 .fab-btn {
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
 }
 
 .emoji-btn {
