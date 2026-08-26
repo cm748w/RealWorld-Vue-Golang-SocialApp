@@ -16,10 +16,6 @@ body
 .brand-text, .brand-icon, .stat-num
   color: #0F172A
 
-// Soft page surface used as background of content container
-.app-page-bg
-  background-color: #EEF2F7
-
 // Rounded, softly-shadowed surface (cards / panels)
 .surface
   background: #fff
@@ -75,6 +71,10 @@ body
 .q-field--outlined .q-field__control, .q-field--filled .q-field__control
   border-radius: 12px
 
+// Loading spinner adapts to the active theme
+.q-spinner
+  color: #64748B
+
 // Refined scrollbar
 ::-webkit-scrollbar
   width: 8px
@@ -125,6 +125,10 @@ body.body--dark
   // adaptive brand & stat numbers
   .brand-text, .brand-icon, .stat-num
     color: #F1F5F9
+
+  // loading spinner
+  .q-spinner
+    color: #CBD5E1
 
   // bottom navigation
   .bottom-nav

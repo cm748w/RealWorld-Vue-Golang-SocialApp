@@ -10,7 +10,7 @@
                 <Post v-if="post" :post="post" :EditPost="EditPost" @changeEdit="EditPost = !EditPost" />
 
                 <div v-else class="q-pa-lg text-center muted">
-                    <q-spinner color="grey-7" size="3em" />
+                    <q-spinner color="" size="3em" />
                     <div class="q-mt-md">Loading post...</div>
                 </div>
             </div>

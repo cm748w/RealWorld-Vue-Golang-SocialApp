@@ -15,7 +15,7 @@
             <q-card class="surface" :style="cardStyle">
                 <q-card-section class="row items-center justify-between q-pb-none">
                     <div class="text-h6 text-weight-bold">Create Post</div>
-                    <q-btn flat round dense icon="eva-close-outline" color="grey-7" @click="persistent = false" />
+                    <q-btn flat round dense icon="eva-close-outline" color="" @click="persistent = false" />
                 </q-card-section>
 
                 <q-card-section class="q-pt-md">
@@ -50,7 +50,7 @@
                 </q-card-section>
 
                 <q-card-actions align="right" class="q-pa-md">
-                    <q-btn flat label="Cancel" color="grey-7" @click="persistent = false" />
+                    <q-btn flat label="Cancel" color="" @click="persistent = false" />
                     <q-btn label="Create" color="primary" @click="CreatePost" />
                 </q-card-actions>
             </q-card>
