@@ -80,6 +80,10 @@ export default {
     ActiveRoute(path) {
       if (path === '/') return this.$route.path === '/'
       return this.$route.path.startsWith(path)
+    },
+    applyTheme() {
+      const dark = localStorage.getItem('dsh-dark') === '1'
+      this.$q.dark.set(dark)
     }
   },
   watch: {
@@ -105,6 +109,7 @@ export default {
     this.connectToNotify()
     this.createChatConnection()
     this.wasAuthed = !!this.GetUserData
+    this.applyTheme()
   },
   beforeUnmount(){
     this.StopConnectionToNotify()
@@ -129,6 +134,17 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #1e293b;
+}
+
+// Dark mode shell overrides
+body.body--dark {
+  .app-shell {
+    background-color: #0B1120;
+  }
+
+  #app {
+    color: #CBD5E1;
+  }
 }
 
 @media (max-width: 1023px) {

@@ -1,5 +1,5 @@
 <template>
-   <q-header class="bg-white text-grey-10" bordered>
+   <q-header class="q-header-app" bordered>
       <q-toolbar class="constrain q-pa-sm">
 
          <!-- Brand: desktop / tablet -->
@@ -39,6 +39,12 @@
             <q-badge v-if="notificationNum > 0" floating color="negative" rounded :label="notificationNum"/>
          </q-btn>
 
+         <!-- Dark mode toggle: desktop / tablet -->
+         <q-btn round flat class="gt-sm q-ml-sm" @click="toggleDark"
+            :icon="isDark ? 'eva-sun-outline' : 'eva-moon-outline'"
+            :color="isDark ? 'grey-7' : 'grey-8'"
+            aria-label="Toggle dark mode" />
+
          <!-- Avatar menu: desktop / tablet -->
          <q-btn v-show="GetUserData?.result" round flat class="gt-sm">
             <q-avatar size="36px" v-if="GetUserData?.result?.imageUrl">
@@ -50,11 +56,18 @@
             <q-menu>
                <q-list style="min-width: 170px;">
                   <q-item clickable v-close-popup>
-                     <q-item-section @click="Profile">Profile</q-item-section>
+                     <q-item-section @click="Profile"><q-icon left name="eva-person-outline" size="18px"/> Profile</q-item-section>
+                  </q-item>
+                  <q-separator />
+                  <q-item clickable v-close-popup @click="toggleDark">
+                     <q-item-section>
+                        <q-icon left :name="isDark ? 'eva-sun-outline' : 'eva-moon-outline'" size="18px" />
+                        {{ isDark ? 'Light Mode' : 'Dark Mode' }}
+                     </q-item-section>
                   </q-item>
                   <q-separator />
                   <q-item clickable v-close-popup @click="LogUserOut">
-                     <q-item-section>Logout</q-item-section>
+                     <q-item-section><q-icon left name="eva-log-out-outline" size="18px"/> Logout</q-item-section>
                   </q-item>
                </q-list>
             </q-menu>
@@ -68,6 +81,11 @@
          </q-btn>
 
          <q-space class="lt-md" />
+
+         <!-- Dark mode toggle: mobile -->
+         <q-btn round flat class="lt-md" @click="toggleDark"
+            :icon="isDark ? 'eva-sun-outline' : 'eva-moon-outline'"
+            :color="isDark ? 'grey-7' : 'grey-8'" />
 
          <!-- Avatar: mobile only -->
          <q-btn v-show="GetUserData?.result" round flat class="lt-md" @click="handleProfileClick">
@@ -87,7 +105,7 @@
          overlay
          :width="250"
          bordered
-         class="bg-white"
+         class="q-drawer-app"
       >
          <div class="q-pa-md">
             <q-item class="q-mb-sm" v-if="GetUserData?.result">
@@ -131,6 +149,13 @@
 
             <q-separator class="q-my-sm" />
 
+            <q-item clickable v-ripple @click="toggleDark">
+               <q-item-section avatar>
+                  <q-icon :name="isDark ? 'eva-sun-outline' : 'eva-moon-outline'" color="primary" />
+               </q-item-section>
+               <q-item-section>{{ isDark ? 'Light Mode' : 'Dark Mode' }}</q-item-section>
+            </q-item>
+
             <q-item clickable v-ripple @click="handleLogoutClick" v-if="GetUserData?.result">
                <q-item-section avatar><q-icon name="eva-log-out-outline" color="negative"/></q-item-section>
                <q-item-section>Logout</q-item-section>
@@ -168,6 +193,9 @@ export default {
       },
       notificationNum() {
          return this.GetUnReadedNotification || 0
+      },
+      isDark() {
+         return this.$q.dark.isActive
       },
       ...mapState(['RealTimeNotify', 'RealTimeChat'])
    },
@@ -210,6 +238,11 @@ export default {
       handleLogoutClick(){
          this.mobileMenuOpen = false
          this.LogUserOut()
+      },
+      toggleDark() {
+         const next = !this.$q.dark.isActive
+         this.$q.dark.set(next)
+         localStorage.setItem('dsh-dark', next ? '1' : '0')
       },
       GoSearch(e) {
          console.log("go", e.target.value)
@@ -270,4 +303,20 @@ export default {
    margin: 0 auto
    .q-field__control
       border-radius: 999px
+
+.q-header-app
+   background: #fff
+   color: #0F172A
+
+.q-drawer-app
+   background: #fff
+   color: #0F172A
+
+body.body--dark
+   .q-header-app
+      background: #0F172A
+      color: #E2E8F0
+   .q-drawer-app
+      background: #101828
+      color: #E2E8F0
 </style>
