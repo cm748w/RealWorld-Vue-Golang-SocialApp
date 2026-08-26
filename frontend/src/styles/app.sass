@@ -3,7 +3,7 @@
 // ============================================================
 
 body
-  background-color: #EEF2F7
+  background-color: #FFFFFF
   color: #1E293B
   -webkit-font-smoothing: antialiased
   -moz-osx-font-smoothing: grayscale
@@ -53,9 +53,11 @@ body
 .q-btn--round
   border-radius: 50%
 
-// Primary is a light blue -> use dark text on filled primary buttons for contrast
+// Primary is pure white -> white buttons with dark text + subtle outline & shadow
 .q-btn.bg-primary
-  color: #082F49 !important
+  color: #0F172A !important
+  border: 1px solid rgba(15, 23, 42, 0.14)
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08)
 
 // Inputs & avatars rounded to match the theme
 .q-field--outlined .q-field__control, .q-field--filled .q-field__control
@@ -132,3 +134,7 @@ body.body--dark
   // profile avatar white ring -> dark surface ring
   .profile-avatar
     box-shadow: 0 0 0 4px #101828, 0 4px 16px rgba(0, 0, 0, 0.5)
+
+  // grey active/unread highlight -> dark surface highlight
+  .bg-grey-3
+    background: #1E293B !important

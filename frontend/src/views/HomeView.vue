@@ -35,7 +35,7 @@
 
 								<template v-slot:loading>
 									<div class="q-pa-lg text-center">
-										<q-spinner color="primary" size="3em" />
+										<q-spinner color="grey-7" size="3em" />
 										<div class="q-mt-md muted">Loading more posts...</div>
 									</div>
 								</template>

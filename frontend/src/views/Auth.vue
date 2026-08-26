@@ -2,8 +2,8 @@
     <div class="auth-page">
         <div class="constrain q-pa-md">
             <div class="text-center q-pa-lg q-pt-xl">
-                <q-icon name="eva-camera-outline" size="56px" color="primary" />
-                <div class="brand-font text-primary text-h3 text-weight-bold q-mt-sm">Home</div>
+                <q-icon name="eva-camera-outline" size="56px" color="grey-9" />
+                <div class="brand-font text-grey-10 text-h3 text-weight-bold q-mt-sm">Home</div>
                 <div class="muted text-subtitle1 q-mt-xs">Connect, share, and discover.</div>
             </div>
 

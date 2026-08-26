@@ -5,7 +5,7 @@
                 <div class="q-pa-md text-center">
                     <div class="text-h5 text-weight-bold q-mb-md">Search Results</div>
                     <q-btn-toggle v-model="model"
-                        toggle-color="primary"
+                        toggle-color="accent"
                         unelevated
                         no-caps
                         class="q-toggle"

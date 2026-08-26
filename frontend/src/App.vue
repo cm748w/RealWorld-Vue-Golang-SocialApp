@@ -121,7 +121,7 @@ export default {
 
 <style lang="scss">
 .app-shell {
-  background-color: #f1f5f9;
+  background-color: #FFFFFF;
 
   .q-page-container {
     // Give room so the mobile bottom nav never hides content
