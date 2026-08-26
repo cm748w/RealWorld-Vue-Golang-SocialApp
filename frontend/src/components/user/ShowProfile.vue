@@ -125,7 +125,7 @@ export default {
 <style lang="scss" scoped>
 .profile-cover {
   height: 128px;
-  background: linear-gradient(120deg, #0EA5E9 0%, #38BDF8 55%, #F43F5E 100%);
+  background: linear-gradient(120deg, #F1F5F9 0%, #E2E8F0 55%, #CBD5E1 100%);
 }
 
 .profile-avatar {

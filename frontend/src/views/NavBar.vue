@@ -4,8 +4,8 @@
 
          <!-- Brand: desktop / tablet -->
          <q-btn flat to="/" class="gt-sm">
-            <q-icon left size="2.2em" name="eva-camera-outline" color="primary" />
-            <q-toolbar-title class="brand-font text-primary text-bold" style="font-size:1.5rem;">Home</q-toolbar-title>
+            <q-icon left size="2.2em" name="eva-camera-outline" color="grey-9" />
+            <q-toolbar-title class="brand-font text-grey-10 text-bold" style="font-size:1.5rem;">Home</q-toolbar-title>
          </q-btn>
 
          <q-separator class="gt-sm" vertical spaced />
@@ -22,7 +22,7 @@
             v-show="GetUserData?.result"
             @click="GoToChat"
             :icon="chatUnreadCount > 0 ? 'eva-message-square' : 'eva-message-square-outline'"
-            :color="chatUnreadCount > 0 ? 'primary' : 'grey-8'"
+            :color="chatUnreadCount > 0 ? 'accent' : 'grey-8'"
             class="gt-sm"
             >
             <q-badge v-if="chatUnreadCount > 0" color="negative" floating rounded :label="chatUnreadCount"/>
@@ -33,7 +33,7 @@
             v-show="GetUserData?.result"
             @click="GoToNotification"
             :icon="notificationNum > 0 ? 'eva-bell' : 'eva-bell-outline'"
-            :color="notificationNum > 0 ? 'primary' : 'grey-8'"
+            :color="notificationNum > 0 ? 'accent' : 'grey-8'"
             class="gt-sm"
             >
             <q-badge v-if="notificationNum > 0" floating color="negative" rounded :label="notificationNum"/>
@@ -76,8 +76,8 @@
          <!-- Brand + hamburger: mobile only -->
          <q-btn flat round icon="eva-menu-outline" @click="mobileMenuOpen = !mobileMenuOpen" class="lt-md" />
          <q-btn flat to="/" class="lt-md">
-            <q-icon left size="1.8em" name="eva-camera-outline" color="primary" />
-            <q-toolbar-title class="brand-font text-primary text-bold" style="font-size:1.25rem;">Home</q-toolbar-title>
+            <q-icon left size="1.8em" name="eva-camera-outline" color="grey-9" />
+            <q-toolbar-title class="brand-font text-grey-10 text-bold" style="font-size:1.25rem;">Home</q-toolbar-title>
          </q-btn>
 
          <q-space class="lt-md" />
@@ -133,17 +133,17 @@
             <q-separator class="q-my-sm" />
 
             <q-item clickable v-ripple @click="handleProfileClick" v-if="GetUserData?.result">
-               <q-item-section avatar><q-icon name="eva-person-outline" color="primary"/></q-item-section>
+               <q-item-section avatar><q-icon name="eva-person-outline" color="grey-8"/></q-item-section>
                <q-item-section>Profile</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple @click="handleChatClick" v-if="GetUserData?.result">
-               <q-item-section avatar><q-icon name="eva-message-square-outline" color="primary"/></q-item-section>
+               <q-item-section avatar><q-icon name="eva-message-square-outline" color="grey-8"/></q-item-section>
                <q-item-section>Messages</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple @click="handleNotificationClick" v-if="GetUserData?.result">
-               <q-item-section avatar><q-icon name="eva-bell-outline" color="primary"/></q-item-section>
+               <q-item-section avatar><q-icon name="eva-bell-outline" color="grey-8"/></q-item-section>
                <q-item-section>Notifications</q-item-section>
             </q-item>
 
@@ -151,7 +151,7 @@
 
             <q-item clickable v-ripple @click="toggleDark">
                <q-item-section avatar>
-                  <q-icon :name="isDark ? 'eva-sun-outline' : 'eva-moon-outline'" color="primary" />
+                  <q-icon :name="isDark ? 'eva-sun-outline' : 'eva-moon-outline'" color="grey-8" />
                </q-item-section>
                <q-item-section>{{ isDark ? 'Light Mode' : 'Dark Mode' }}</q-item-section>
             </q-item>
@@ -162,7 +162,7 @@
             </q-item>
 
             <q-item clickable v-ripple to="/Auth" v-else>
-               <q-item-section avatar><q-icon name="eva-log-in-outline" color="primary"/></q-item-section>
+               <q-item-section avatar><q-icon name="eva-log-in-outline" color="grey-8"/></q-item-section>
                <q-item-section>Login</q-item-section>
             </q-item>
          </div>

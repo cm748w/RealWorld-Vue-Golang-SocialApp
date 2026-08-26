@@ -17,27 +17,27 @@
             <q-separator />
 
             <q-item clickable v-ripple to="/" :class="activeClass('/')">
-                <q-item-section avatar><q-icon color="primary" name="eva-home-outline" /></q-item-section>
+                <q-item-section avatar><q-icon color="grey-8" name="eva-home-outline" /></q-item-section>
                 <q-item-section>Home</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple :to="profilePath" :class="activeClass('/profile')">
-                <q-item-section avatar><q-icon color="primary" name="eva-person-outline" /></q-item-section>
+                <q-item-section avatar><q-icon color="grey-8" name="eva-person-outline" /></q-item-section>
                 <q-item-section>Profile</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple to="/Chat" :class="activeClass('/Chat')">
-                <q-item-section avatar><q-icon color="primary" name="eva-message-square-outline" /></q-item-section>
+                <q-item-section avatar><q-icon color="grey-8" name="eva-message-square-outline" /></q-item-section>
                 <q-item-section>Messages</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple to="/Notification" :class="activeClass('/Notification')">
-                <q-item-section avatar><q-icon color="primary" name="eva-bell-outline" /></q-item-section>
+                <q-item-section avatar><q-icon color="grey-8" name="eva-bell-outline" /></q-item-section>
                 <q-item-section>Notifications</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple to="/Auth" v-if="!GetUserData?.result">
-                <q-item-section avatar><q-icon color="primary" name="eva-log-in-outline" /></q-item-section>
+                <q-item-section avatar><q-icon color="grey-8" name="eva-log-in-outline" /></q-item-section>
                 <q-item-section>Sign In</q-item-section>
             </q-item>
         </q-card>
@@ -65,8 +65,8 @@ export default {
     },
     methods: {
         activeClass(path) {
-            if (path === '/') return this.$route.path === '/' ? 'bg-primary-1' : ''
-            return this.$route.path.startsWith(path) ? 'bg-primary-1' : ''
+            if (path === '/') return this.$route.path === '/' ? 'bg-grey-3' : ''
+            return this.$route.path.startsWith(path) ? 'bg-grey-3' : ''
         }
     }
 }
