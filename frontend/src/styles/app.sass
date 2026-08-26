@@ -67,6 +67,10 @@ body
   .q-item__label, .q-item__label--caption
     color: #0F172A !important
 
+// Buttons with no meaningful color: force adaptive text/icon (dark on light, light on dark)
+.btn-inherit
+  color: #0F172A !important
+
 // Inputs & avatars rounded to match the theme
 .q-field--outlined .q-field__control, .q-field--filled .q-field__control
   border-radius: 12px
@@ -173,3 +177,7 @@ body.body--dark
 
     .q-item__label, .q-item__label--caption
       color: #E2E8F0 !important
+
+  // neutral buttons in dark mode
+  .btn-inherit
+    color: #E2E8F0 !important
