@@ -65,15 +65,20 @@
             <q-card class="col-12 surface">
                 <q-card-section>
                     <div class="text-h6 q-mb-sm">Edit Post</div>
-                    <q-input dense outlined v-model="localPost.title" autofocus placeholder="Post Title" />
+                    <q-input dense outlined v-model="localPost.title" autofocus placeholder="Post Title"
+                        maxlength="120" counter />
                     <div class="q-mt-sm">
-                        <q-input outlined v-model="localPost.message" placeholder="What's on your mind?" type="textarea" />
+                        <q-input outlined v-model="localPost.message" placeholder="What's on your mind?"
+                            type="textarea" autogrow maxlength="500" counter />
                     </div>
                     <div class="q-pa-md q-pl-0">
                         <q-file v-model="file" label="Pick Image" filled />
                     </div>
-                    <div v-if="localPost.selectedFile" class="q-mt-sm">
-                        <q-img :src="localPost.selectedFile" spinner-color="red" style="height: 140px; max-width: 200px;" class="rounded-borders" />
+                    <div v-if="localPost.selectedFile" class="q-mt-sm row items-center q-gutter-sm">
+                        <q-img :src="localPost.selectedFile" spinner-color="red"
+                            style="height: 140px; max-width: 200px;" class="rounded-borders" />
+                        <q-btn flat round dense icon="eva-trash-2-outline" color="negative"
+                            @click="clearImage" aria-label="Remove image" />
                     </div>
                     <q-btn flat label="Update" color="primary" @click="FileUpdate" />
                 </q-card-section>
@@ -161,6 +166,10 @@ export default {
                     this.localPost.selectedFile = reader.result
                 }
             })
+        },
+        clearImage() {
+            this.localPost.selectedFile = null
+            this.file = null
         }
     },
     computed:{

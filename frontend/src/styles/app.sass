@@ -84,3 +84,47 @@ body
   scrollbar-width: none
   &::-webkit-scrollbar
     display: none
+
+// ============================================================
+//  Dark mode overrides (active when Quasar Dark is enabled)
+// ============================================================
+body.body--dark
+  background-color: #0B1120
+  color: #CBD5E1
+
+  // surfaces / cards
+  .surface, .q-card
+    background: #101828
+    border-color: rgba(255, 255, 255, 0.08)
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 18px rgba(0, 0, 0, 0.45)
+
+  .muted
+    color: #94A3B8
+
+  .section-title
+    color: #F1F5F9
+
+  // bottom navigation
+  .bottom-nav
+    background: rgba(16, 24, 40, 0.92)
+    border-top-color: rgba(255, 255, 255, 0.08)
+
+  // scrollbar
+  ::-webkit-scrollbar-thumb
+    background: rgba(148, 163, 184, 0.4)
+
+  // post feed card & chat header
+  .post-view, .chat-pane-header
+    background: #101828
+
+  // chat message area
+  .message-container
+    background: #0B1120
+
+  // auth page gradient
+  .auth-page
+    background: linear-gradient(180deg, #0B1120 0%, #101828 100%)
+
+  // profile avatar white ring -> dark surface ring
+  .profile-avatar
+    box-shadow: 0 0 0 4px #101828, 0 4px 16px rgba(0, 0, 0, 0.5)
