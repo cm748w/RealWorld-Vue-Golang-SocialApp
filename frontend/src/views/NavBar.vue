@@ -74,7 +74,7 @@
          </q-btn>
 
          <!-- Brand + hamburger: mobile only -->
-         <q-btn flat round icon="eva-menu-outline" @click="mobileMenuOpen = !mobileMenuOpen" class="lt-md" />
+         <q-btn flat round icon="eva-menu-outline" @click="mobileMenuOpen = !mobileMenuOpen" class="lt-md btn-inherit" />
          <q-btn flat to="/" class="lt-md">
             <q-icon left size="1.8em" name="eva-camera-outline" class="brand-icon" />
             <q-toolbar-title class="brand-font brand-text text-bold" style="font-size:1.25rem;">Home</q-toolbar-title>
