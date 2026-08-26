@@ -38,7 +38,7 @@
                 <q-separator class="q-my-sm" />
 
                 <div class="row items-center justify-between q-gutter-sm">
-                    <q-btn flat round :color="UserLike ? 'accent' : 'grey-7'" @click="Like">
+                    <q-btn flat round :color="UserLike ? 'accent' : undefined" @click="Like">
                         <q-icon :name="UserLike ? 'eva-heart' : 'eva-heart-outline'" size="20px" />
                         <span v-if="LikesCount()" class="q-ml-xs">{{ LikesCount() }}</span>
                     </q-btn>
@@ -80,7 +80,7 @@
                         <q-btn flat round dense icon="eva-trash-2-outline" color="negative"
                             @click="clearImage" aria-label="Remove image" />
                     </div>
-                    <q-btn flat label="Update" color="" @click="FileUpdate" />
+                    <q-btn flat label="Update" class="btn-inherit" @click="FileUpdate" />
                 </q-card-section>
             </q-card>
         </div>
