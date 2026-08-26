@@ -18,9 +18,9 @@
                 <q-separator class="q-my-lg" />
 
                 <div class="row q-gutter-lg items-center">
-                    <span class="muted"><b class="text-dark">{{ userPosts?.length || 0 }}</b> Posts</span>
-                    <span class="muted"><b class="text-dark">{{ Luserdata?.followers?.length || 0 }}</b> Followers</span>
-                    <span class="muted"><b class="text-dark">{{ Luserdata?.following?.length || 0 }}</b> Following</span>
+                    <span class="muted"><b class="stat-num">{{ userPosts?.length || 0 }}</b> Posts</span>
+                    <span class="muted"><b class="stat-num">{{ Luserdata?.followers?.length || 0 }}</b> Followers</span>
+                    <span class="muted"><b class="stat-num">{{ Luserdata?.following?.length || 0 }}</b> Following</span>
                 </div>
             </div>
 
