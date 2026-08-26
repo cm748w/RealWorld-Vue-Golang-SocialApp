@@ -1,38 +1,37 @@
 <template>
 	<q-page class="constrain q-pa-md">
-		<div class="row q-col-gutter-lg constrain">
-			<ShowProfile 
-				:userData="userData"
-				:userPosts="userPosts"
-				:isSameUser="isSameUser"
-				@EditProfile="EditMode = !EditMode"
-				@update-user="updateUserLocal"
-				v-if="!EditMode" />
+		<ShowProfile
+			:userData="userData"
+			:userPosts="userPosts"
+			:isSameUser="isSameUser"
+			@EditProfile="EditMode = !EditMode"
+			@update-user="updateUserLocal"
+			v-if="!EditMode" />
 
-			<EditProfile 
-				:userData="userData"
-				:isSameUser="isSameUser"
-				@EditProfile="EditMode = !EditMode"
-				@update-user="updateUserLocal"
-				v-else />
+		<EditProfile
+			:userData="userData"
+			:isSameUser="isSameUser"
+			@EditProfile="EditMode = !EditMode"
+			@update-user="updateUserLocal"
+			v-else />
+
+		<div class="row q-col-gutter-md q-pt-md">
 			<div class="col-12">
-				<q-separator inset />
+				<div class="section-title q-pa-md q-pb-xs">Posts</div>
 			</div>
-			<div class="col-4" v-for="post in userPosts" :key="post._id">
+
+			<div class="col-12 col-sm-6 col-md-4" v-for="post in userPosts" :key="post._id">
 				<Post :post="post" />
 			</div>
+
+			<div v-if="!userPosts.length" class="col-12 text-center muted q-pa-lg">
+				No posts yet.
+			</div>
 		</div>
-
 	</q-page>
-
-
-
-
-
 </template>
 
 <script>
-// @ is an alias to /src
 import { mapGetters, mapMutations, mapActions } from 'vuex'
 import Post from '@/components/post/Post.vue'
 import ShowProfile from '@/components/user/ShowProfile.vue'
@@ -80,7 +79,6 @@ export default {
 				this.SetCachedUser(updatedUser)
 			}
 		},
-		// 获取所有用户信息和帖子
 		async GetAll() {
 			const profileid = this.$route.params.id
 

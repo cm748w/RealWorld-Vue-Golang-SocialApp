@@ -1,92 +1,92 @@
 <template>
-    <div>
+    <div class="post-card q-mb-md">
         <!-- show post -->
-         <q-card v-if="!EditPost" class="card-post q-mb-md" flat bordered>
+        <q-card v-if="!EditPost" class="post-view" flat bordered>
             <q-item>
                 <q-item-section avatar>
-                    <q-avatar>
+                    <q-avatar class="post-avatar">
                         <img v-if="user?.imageUrl" :src="user?.imageUrl" />
-                        <img v-else src="https://cdn-icons-png.flaticon.com/512/1077/1077063.png" />
+                        <img v-else :src="defaultAvatar" />
                     </q-avatar>
                 </q-item-section>
                 <q-item-section>
-                    <q-item-label class="text-bold">{{ user.name }}</q-item-label>
-                    <q-item-label caption>
-                        {{ getTime() }}
-                    </q-item-label>
+                    <q-item-label class="text-weight-bold">{{ user.name }}</q-item-label>
+                    <q-item-label caption>{{ getTime() }}</q-item-label>
                 </q-item-section>
             </q-item>
-            <q-separator />
+
             <q-img
+                v-if="localPost.selectedFile"
+                class="post-img"
                 style="cursor: pointer;"
                 @click="GoToDetails"
-                :src="localPost.selectedFile || 'https://ts3.tc.mm.bing.net/th/id/OIP-C.1Ahs_HVJQDBFPAPeYn2ARwHaEl?rs=1&pid=ImgDetMain&o=7&rm=3'"
+                :src="localPost.selectedFile"
             />
+
             <q-card-section>
-                <div class="text-h6">{{ localPost.title }}</div>
-                <div class="text-subtitle1">{{ localPost.message }}</div>
-                <q-separator />
-                <div class="text-subtitle4"
-                    v-for="(comment, index) in localPost.comments"
-                    :key="index">
-                    {{ comment }}
+                <div class="text-subtitle1 text-weight-bold q-mb-xs">{{ localPost.title }}</div>
+                <div class="text-body1" style="white-space: pre-wrap;">{{ localPost.message }}</div>
+
+                <div v-if="localPost.comments?.length" class="q-mt-sm">
+                    <div class="muted text-caption q-mb-xs text-weight-medium">Comments</div>
+                    <div class="text-body2 muted" v-for="(comment, index) in localPost.comments" :key="index">
+                        <q-icon name="eva-message-circle-outline" size="14px" class="q-mr-xs" />
+                        {{ comment }}
+                    </div>
                 </div>
 
-                <q-btn v-if="!UserLike" @click="Like" flat round color="red" icon="eva-heart-outline">
-                    {{ LikesCount() }}
-                </q-btn>
-                <q-btn v-else @click="Like" flat round color="red" icon="eva-heart">
-                    {{ LikesCount() }}
-                </q-btn>
+                <q-separator class="q-my-sm" />
+
+                <div class="row items-center justify-between q-gutter-sm">
+                    <q-btn flat round :color="UserLike ? 'accent' : 'grey-7'" @click="Like">
+                        <q-icon :name="UserLike ? 'eva-heart' : 'eva-heart-outline'" size="20px" />
+                        <span v-if="LikesCount()" class="q-ml-xs">{{ LikesCount() }}</span>
+                    </q-btn>
+                </div>
             </q-card-section>
 
-            <q-input outlined v-model="form.text" label="add count..">
-                <q-btn v-if="form.text !== ''" @click="AddComment" flat round color="primary"
-                icon="eva-plus-square" />
-            </q-input>
+            <q-card-actions>
+                <q-input
+                    outlined dense
+                    v-model="form.text"
+                    label="Add a comment..."
+                    class="col q-px-sm"
+                    @keyup.enter="AddComment"
+                >
+                    <template v-slot:append>
+                        <q-btn v-if="form.text !== ''" @click="AddComment" flat round color="primary" icon="eva-plus-square" />
+                    </template>
+                </q-input>
+            </q-card-actions>
+        </q-card>
 
-         </q-card>
-         <!-- edit post -->
-          <div v-else class="q-pa-md items-start q-gutter-md">
-            <q-card class="my-card col-12">
+        <!-- edit post -->
+        <div v-else class="q-pa-md items-start q-gutter-md">
+            <q-card class="col-12 surface">
                 <q-card-section>
-                    <div class="text-h6">Edit Post</div>
-                    <q-input dense v-model="localPost.title" autofocus placeholder="Post Title" />
-                    <div>
-                        <q-input v-model="localPost.message"
-                            placeholder="What's on your mind?"
-                            type="textarea"
-                        />
+                    <div class="text-h6 q-mb-sm">Edit Post</div>
+                    <q-input dense outlined v-model="localPost.title" autofocus placeholder="Post Title" />
+                    <div class="q-mt-sm">
+                        <q-input outlined v-model="localPost.message" placeholder="What's on your mind?" type="textarea" />
                     </div>
-                    <div class="q-pa-md">
-                        <q-file
-                            v-model="file"
-                            label="Pick Image"
-                            filled
-                        />
+                    <div class="q-pa-md q-pl-0">
+                        <q-file v-model="file" label="Pick Image" filled />
                     </div>
-
-                    <div>
-                        <q-img 
-                            :src="localPost.selectedFile"
-                            spinner-color="red"
-                            style="height: 140px; max-width: 150px;"
-                        />
+                    <div v-if="localPost.selectedFile" class="q-mt-sm">
+                        <q-img :src="localPost.selectedFile" spinner-color="red" style="height: 140px; max-width: 200px;" class="rounded-borders" />
                     </div>
-
-                    <q-btn flat label="Update" v-close-popup @click="FileUpdate" />
+                    <q-btn flat label="Update" color="primary" @click="FileUpdate" />
                 </q-card-section>
             </q-card>
-          </div>
+        </div>
     </div>
-
-
-
 </template>
 
 <script>
 import moment from 'moment';
-import { mapActions,mapGetters } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
+
+const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/1077/1077063.png';
 
 export default {
     name: 'PostComponent',
@@ -98,6 +98,7 @@ export default {
             file: null,
             UserLike: false,
             localPost: {},
+            defaultAvatar: DEFAULT_AVATAR,
         }
     },
     watch: {
@@ -146,9 +147,7 @@ export default {
             }
         },
         AddComment(){
-            // console.log("comment ", this.form.text)
             this.localPost.comments.push(this.form.text)
-            // store
             this.commentPost({ value: this.form.text, id:this.localPost._id})
             this.form.text = ''
         },
@@ -168,13 +167,11 @@ export default {
         ...mapGetters('auth', ['GetUserData']),
     },
     async mounted(){
-        // Create local copy of post prop
         this.localPost = JSON.parse(JSON.stringify(this.post))
 
         const response = await this.GetUserById(this.localPost?.creator)
         const { user } = response || {}
         this.user = user || {}
-        // get if user liked the post or not
         const uid = this.GetUserData?.result?._id
         const likes = Array.isArray(this.localPost.likes) ? this.localPost.likes : []
         var isLike = likes.find((like)=> like == uid)
@@ -186,3 +183,21 @@ export default {
     }
 }
 </script>
+
+<style lang="scss" scoped>
+.post-card {
+  .post-view {
+    background: #fff;
+  }
+
+  .post-avatar {
+    border: 2px solid rgba(79, 70, 229, 0.35);
+  }
+
+  .post-img {
+    width: 100%;
+    border-radius: 12px;
+    padding: 0 16px;
+  }
+}
+</style>

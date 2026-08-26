@@ -1,53 +1,47 @@
 <template>
-    <q-page-sticky position="bottom-left" v-show="GetUserData?.result">
-        <div class="q-pa-md q-gutter-sm">
-            <q-btn label="Create Post" style="cursor: pointer;" icon="eva-plus-circle-outline" 
-                color="primary" @click="persistent = true" />
-                
-            <!-- popup -->
-             <q-dialog v-model="persistent" persistent transition-show="scale" transition-hide="scale">
-                <q-card style="min-width: 350px;" >
-                    <q-card-section>
-                        <div class="text-h6">Create Post</div>
-                    </q-card-section>
+    <q-page-sticky position="bottom-right" :offset="fabOffset" v-show="GetUserData?.result">
+        <q-btn
+            :label="isMobileNav ? '' : 'Create Post'"
+            icon="eva-plus-circle-outline"
+            color="primary"
+            rounded
+            unelevated
+            class="fab-btn q-mr-md"
+            @click="persistent = true"
+        />
 
-                    <q-card-section class="q-pt-none">
-                        <q-input dense v-model="post.title" autofocus placeholder="Post Title" />
-                        <div class="q-pa-md" style="max-width: 300px;">
-                            <q-input
-                                v-model="post.message"
-                                placeholder="What's on your mind?"
-                                type="textarea"
-                            />
-                        </div>
-                        <div class="q-pa-md">
-                            <q-file
-                                v-model="file"
-                                label="Pick Image"
-                                filled
-                                style="max-width: 400px;"
-                            />
-                        </div>
-                        <div class="q-gutter-sm row items-start">
-                            <q-img
-                                :src="post.selectedFile"
-                                spinner-color="red"
-                                style="height: 140px; max-width: 150px;"
-                            />
-                        </div>
-                    </q-card-section>
+        <!-- popup -->
+        <q-dialog v-model="persistent" persistent transition-show="scale" transition-hide="scale" :maximized="isMobileNav">
+            <q-card class="surface" :style="cardStyle">
+                <q-card-section class="row items-center justify-between q-pb-none">
+                    <div class="text-h6 text-weight-bold">Create Post</div>
+                    <q-btn flat round dense icon="eva-close-outline" color="grey-7" @click="persistent = false" />
+                </q-card-section>
 
-                    <q-card-actions align="right" class="text-primary">
-                        <q-btn flat label="Create" v-close-popup @click="CreatePost" />
-                        <q-btn flat label="Cancel" v-close-popup />
-                        
-                        
-                    </q-card-actions>
-                </q-card>
-             </q-dialog>
-<!-- -------------------------------------------------------------------------------------- -->
-        </div>
+                <q-card-section class="q-pt-md">
+                    <q-input dense outlined v-model="post.title" autofocus placeholder="Post Title" />
+                    <div class="q-mt-sm">
+                        <q-input outlined v-model="post.message" placeholder="What's on your mind?" type="textarea" autogrow />
+                    </div>
+                    <div class="q-mt-sm q-gutter-sm">
+                        <q-file v-model="file" label="Pick Image" filled style="max-width: 400px;" />
+                    </div>
+                    <div class="q-mt-sm q-gutter-sm row items-start">
+                        <q-img
+                            :src="post.selectedFile"
+                            spinner-color="red"
+                            style="height: 140px; max-width: 150px;"
+                            class="rounded-borders"
+                        />
+                    </div>
+                </q-card-section>
 
+                <q-card-actions align="right" class="q-pa-md">
+                    <q-btn flat label="Cancel" color="grey-7" @click="persistent = false" />
+                    <q-btn label="Create" color="primary" @click="CreatePost" />
+                </q-card-actions>
+            </q-card>
+        </q-dialog>
     </q-page-sticky>
 </template>
 
@@ -64,9 +58,20 @@ export default {
             file: null
         }
     },
+    computed: {
+        ...mapGetters('auth', ['GetUserData']),
+        isMobileNav() {
+            return this.$q.screen.lt.md
+        },
+        fabOffset() {
+            return this.isMobileNav ? [16, 84] : [16, 16]
+        },
+        cardStyle() {
+            return `width: min(90vw, 500px);`
+        }
+    },
     watch: {
         file() {
-            // 文件类型验证
             if (this.file && !this.file.type.match('image.*')) {
                 this.$q.notify({
                     icon: 'eva-alert-circle-outline',
@@ -76,7 +81,6 @@ export default {
                 this.file = null
                 return
             }
-            // 文件大小验证（限制为5MB）
             if (this.file && this.file.size > 5 * 1024 * 1024) {
                 this.$q.notify({
                     icon: 'eva-alert-circle-outline',
@@ -86,16 +90,11 @@ export default {
                 this.file = null
                 return
             }
-            // convert fun
             this.ConvertToBase64()
         }
     },
-    computed: {
-        ...mapGetters('auth', ['GetUserData'])
-    },
     methods: {
         ...mapActions(['createPost']),
-        // XSS防护函数
         sanitizeInput(input) {
             return input.replace(/[&<>'"]/g, function(match) {
                 const sanitizeMap = {
@@ -109,63 +108,37 @@ export default {
             })
         },
         async CreatePost() {
-            // 优先使用GetUserData，如果没有再从localStorage获取
             var name = this.GetUserData?.result?.name || JSON.parse(localStorage.getItem('profile'))?.result?.name
             this.post.name = name
             const title = (this.post.title || '').trim()
             const message = (this.post.message || '').trim()
-            // validation
             var isValidate = true
-            // 只验证必要字段
             if (!title) {
                 isValidate = false
-                this.$q.notify({
-                    icon: 'eva-alert-circle-outline',
-                    type: 'negative',
-                    message: 'Title is required'
-                })
+                this.$q.notify({ icon: 'eva-alert-circle-outline', type: 'negative', message: 'Title is required' })
             }
             if (!message) {
                 isValidate = false
-                this.$q.notify({
-                    icon: 'eva-alert-circle-outline',
-                    type: 'negative',
-                    message: 'Message is required'
-                })
+                this.$q.notify({ icon: 'eva-alert-circle-outline', type: 'negative', message: 'Message is required' })
             }
-            // after validate
             if(isValidate){
                 try {
-                    // XSS防护
                     this.post.title = this.sanitizeInput(title)
                     this.post.message = this.sanitizeInput(message)
                     const data = await this.createPost(this.post)
                     if (data) {
                         this.$emit('created')
-                        // 清空表单
                         this.post = { title: '', message: '', name: '', selectedFile: null }
                         this.file = null
-                        this.persistent = false  // 关闭对话框
-                        this.$q.notify({
-                            icon: 'eva-check-circle-outline',
-                            type: 'positive',
-                            message: 'Post created successfully'
-                        })
+                        this.persistent = false
+                        this.$q.notify({ icon: 'eva-check-circle-outline', type: 'positive', message: 'Post created successfully' })
                     } else {
-                        this.$q.notify({
-                            icon: 'eva-alert-circle-outline',
-                            type: 'negative',
-                            message: 'Failed to create post'
-                        })
+                        this.$q.notify({ icon: 'eva-alert-circle-outline', type: 'negative', message: 'Failed to create post' })
                     }
                 } catch (error) {
                     const responseData = error?.response?.data
                     const errorMessage = responseData?.message || responseData || 'Failed to create post'
-                    this.$q.notify({
-                        icon: 'eva-alert-circle-outline',
-                        type: 'negative',
-                        message: errorMessage
-                    })
+                    this.$q.notify({ icon: 'eva-alert-circle-outline', type: 'negative', message: errorMessage })
                 }
             }
         },
@@ -177,12 +150,14 @@ export default {
                 this.post.selectedFile = reader.result
             }
             reader.onerror = ()=> {
-                this.$q.notify({
-                    icon: 'eva-alert-circle-outline',
-                    type: 'negative',
-                    message: 'Failed to read file'
-                })
+                this.$q.notify({ icon: 'eva-alert-circle-outline', type: 'negative', message: 'Failed to read file' })
             }
         },
     },
 }</script>
+
+<style lang="scss" scoped>
+.fab-btn {
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+}
+</style>

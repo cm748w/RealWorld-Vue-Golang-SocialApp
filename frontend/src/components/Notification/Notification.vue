@@ -1,51 +1,57 @@
 <template>
     <q-page class="constrain q-pa-md">
-        <div class="row q-col-gutter-lg">
-            <div class="col-12">
+        <div class="row justify-center">
+            <div class="col-12 col-md-8">
+                <div class="q-pa-md q-pb-xs">
+                    <div class="text-h5 text-weight-bold">Notifications</div>
+                </div>
 
-                <q-list :bordered="NotifyList.length > 0" padding>
+                <q-list :bordered="NotifyList.length > 0" class="surface" style="overflow:hidden;">
 
                     <div v-for="notify in NotifyList" :key="notify._id">
-                        <q-item clickable @click="MoveToThePath(notify)" :class="{'text-red': !notify.isRead}" >
+                        <q-item clickable @click="MoveToThePath(notify)"
+                            :class="{ 'bg-primary-1': !notify.isRead }">
                             <q-item-section top avatar>
                                 <q-avatar>
-                                    <img :src="notify?.user?.avatar || 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center'">
+                                    <img :src="notify?.user?.avatar || defaultAvatar">
                                 </q-avatar>
                             </q-item-section>
 
                             <q-item-section>
                                 <q-item-label>{{ notify?.details }}</q-item-label>
-                                <q-item-label>{{ notify?.user?.name }}</q-item-label>
+                                <q-item-label caption class="muted">{{ notify?.user?.name }}</q-item-label>
+                            </q-item-section>
+
+                            <q-item-section side v-if="!notify.isRead">
+                                <q-badge color="primary" label="New" />
                             </q-item-section>
                         </q-item>
                         <q-separator spaced />
                     </div>
 
                     <q-item v-if="NotifyList.length === 0" class="empty-notice-item">
-                        <q-item-section class="text-center text-grey-7 empty-notice-text">
-                            尊敬的彦祖先生，您好！
-                            <br/>这里目前没有关于您通知。
+                        <q-item-section class="text-center muted q-pa-lg empty-notice-text">
+                            <q-icon name="eva-bell-outline" size="48px" class="q-mb-md" />
+                            这里目前没有关于您的通知
                         </q-item-section>
                     </q-item>
-
-
                 </q-list>
             </div>
         </div>
     </q-page>
-
-
 </template>
 
 <script>
 import { mapGetters, mapActions, mapState } from 'vuex'
-// import { watch } from 'vue'
+
+const DEFAULT_AVATAR = 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center';
 
 export default {
     name:'Notification-Component',
     data(){
         return {
-            NotifyList:[]
+            NotifyList:[],
+            defaultAvatar: DEFAULT_AVATAR,
         }
     },
     watch: {
@@ -63,7 +69,6 @@ export default {
         }
         this.NotifyList = await this.GetUnReadedNotifyNum(userId) || []
         console.log("notifilist", this.NotifyList)
-        // mark notification as readed
         setTimeout(() => {
             this.NotifyList.forEach(async el =>{
                 if(!el.isRead){
@@ -89,15 +94,12 @@ export default {
             }
         }
     }
-
 }
-
 </script>
 
 <style scoped>
 .empty-notice-text {
-    font-family: "STKaiti", "KaiTi", "Kaiti SC", "楷体", serif;
-    font-size: 24px;
+    font-size: 16px;
     line-height: 1.6;
 }
 
