@@ -6,30 +6,32 @@
             <div class="q-pa-md">
                 <div class="row items-center q-col-gutter-md">
                     <div class="col-auto">
-                        <q-avatar size="88px" class="profile-avatar">
+                        <q-avatar size="84px" class="profile-avatar">
                             <img v-if="Luserdata?.imageUrl" :src="Luserdata?.imageUrl">
                             <img v-else :src="defaultAvatar">
                         </q-avatar>
                     </div>
                     <div class="col">
                         <div class="text-h5 text-weight-bold ellipsis">{{ Luserdata?.name }}</div>
-                        <div class="muted q-mt-xs ellipsis-2-lines">{{ Luserdata?.bio }}</div>
+                        <div class="muted q-mt-xs" v-if="Luserdata?.bio">{{ Luserdata?.bio }}</div>
                     </div>
                 </div>
 
-                <div class="row wrap items-center justify-between q-mt-lg q-gutter-md">
-                    <div class="row q-gutter-lg">
-                        <span class="muted"><b class="text-dark">{{ userPosts?.length || 0 }}</b> Posts</span>
-                        <span class="muted"><b class="text-dark">{{ Luserdata?.followers?.length || 0 }}</b> Followers</span>
-                        <span class="muted"><b class="text-dark">{{ Luserdata?.following?.length || 0 }}</b> Following</span>
-                    </div>
+                <q-separator class="q-my-lg" />
 
-                    <div class="row q-gutter-sm">
-                        <q-btn v-if="isSameUser" label="Edit" color="primary" unelevated rounded @click="Edit" />
-                        <q-btn v-else-if="!isUserFollowing" label="Follow" color="accent" unelevated rounded @click="FollowOrUnFollow" />
-                        <q-btn v-else label="Following" color="grey-6" unelevated rounded @click="FollowOrUnFollow" />
-                    </div>
+                <div class="row q-gutter-lg items-center">
+                    <span class="muted"><b class="text-dark">{{ userPosts?.length || 0 }}</b> Posts</span>
+                    <span class="muted"><b class="text-dark">{{ Luserdata?.followers?.length || 0 }}</b> Followers</span>
+                    <span class="muted"><b class="text-dark">{{ Luserdata?.following?.length || 0 }}</b> Following</span>
                 </div>
+            </div>
+
+            <q-separator />
+
+            <div class="q-pa-md">
+                <q-btn v-if="isSameUser" label="Edit Profile" color="primary" unelevated rounded class="full-width" @click="Edit" />
+                <q-btn v-else-if="!isUserFollowing" label="Follow" color="accent" unelevated rounded class="full-width" @click="FollowOrUnFollow" />
+                <q-btn v-else label="Following" color="grey-6" unelevated rounded class="full-width" @click="FollowOrUnFollow" />
             </div>
         </q-card>
     </div>
@@ -129,6 +131,5 @@ export default {
 .profile-avatar {
   border: 4px solid #fff;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
-  margin-top: -48px;
 }
 </style>

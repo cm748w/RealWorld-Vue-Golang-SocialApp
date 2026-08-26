@@ -98,7 +98,6 @@
                </q-item-section>
                <q-item-section>
                   <q-item-label class="text-weight-bold text-subtitle1">{{ GetUserData?.result?.name }}</q-item-label>
-                  <q-item-label caption>{{ GetUserData?.result?.email }}</q-item-label>
                </q-item-section>
             </q-item>
 
