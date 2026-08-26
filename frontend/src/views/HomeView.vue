@@ -1,62 +1,57 @@
 <template>
-	<q-page class="constrain q-pa-md home-page">
+	<q-page class="constrain home-page">
 		<div class="row q-col-gutter-lg">
-			<div class="col-3">
+			<div class="col-md-3 gt-sm">
 				<SideBar />
 			</div>
-			<div v-if="!load" class="col-6 q-mx-auto">
+
+			<div class="col-12 col-md-6 q-mx-auto">
 				<div class="q-pa-md">
-					<q-card>
-						<q-item>
-							<q-item-section avatar>
-								<q-skeleton type="QAvatar" />
-							</q-item-section>
 
-							<q-item-section>
-								<q-item-label>
-									<q-skeleton type="text" />
-								</q-item-label>
-								<q-item-label caption>
-									<q-skeleton type="text" />
-								</q-item-label>
-							</q-item-section>
-						</q-item>
+					<!-- Skeletons -->
+					<template v-if="!load">
+						<div v-for="i in 3" :key="i" class="surface q-mb-md q-pa-md">
+							<div class="row items-center">
+								<q-skeleton type="QAvatar" size="48px" />
+								<div class="q-ml-md col">
+									<q-skeleton type="text" style="width: 40%" />
+									<q-skeleton type="text" style="width: 25%" />
+								</div>
+							</div>
+							<q-skeleton height="200px" square class="q-mt-md rounded-borders" />
+							<div class="row q-mt-md q-gutter-sm">
+								<q-skeleton type="QBtn" />
+								<q-skeleton type="QBtn" />
+								<q-skeleton type="QBtn" />
+							</div>
+						</div>
+					</template>
 
-						<q-skeleton height="200px" square />
-						<q-card-actions class="q-gutter-md">
-							<q-skeleton type="QBtn" />
-							<q-skeleton type="QBtn" />
-						</q-card-actions>
-					</q-card>
+					<!-- Posts -->
+					<template v-else>
+						<Post v-for="post in posts" :key="post._id" :post="post" />
+
+						<div v-if="loadingMore" class="q-pa-lg text-center">
+							<q-spinner color="primary" size="3em" />
+							<div class="q-mt-md muted">Loading more posts...</div>
+						</div>
+
+						<div v-if="hasReachedEnd && posts.length > 0" class="q-pa-md text-center muted">
+							<q-icon name="eva-inbox-outline" size="24px" />
+							<div class="q-mt-sm">No More Posts</div>
+						</div>
+
+						<div class="bottom-spacer" />
+					</template>
+
 				</div>
 			</div>
-			<div v-else class="col-6 q-mx-auto">
-				<Post v-for="post in posts" :key="post._id" :post="post" />
 
-				<!-- loading indicatior for more posts -->
-				<div v-if="loadingMore" class="q-pa-lg text-center">
-					<q-spinner-hourlass color="primary" size="3em" />
-					<div class="q-mt-md text-grey-7">
-						Loading more posts...
-					</div>
-				</div>
-
-				<!-- end of posts indicatior -->
-				<div v-if="hasReachedEnd && posts.length > 0" class="q-pa-md text-center text-grey-6">
-					<q-icon name="eva-inbox-outline" size="24px" />
-					<div class="q-mt-sm">No More Posts</div>
-				</div>
-
-				<div class="bottom-spacer"></div>
-
-			</div>
-			<div class="col-3">
+			<div class="col-md-3 gt-sm">
 				<Rightbar />
 			</div>
+
 			<Add @created="OnPostCreated" />
-		</div>
-		<div class="q-pa-lg flex justify-center pagination-row">
-			
 		</div>
 	</q-page>
 </template>
@@ -78,11 +73,6 @@ export default {
 			hasReachedEnd: false,
 		}
 	},
-	// watch: {
-	// 	current() {
-	// 		this.GetAllPosts()
-	// 	}
-	// },
 	components: {
 		Add,
 		Post,
@@ -108,7 +98,6 @@ export default {
 						this.posts = data?.data
 					}
 
-					// check if we reached the end
 					this.hasReachedEnd = this.current >= this.max
 				}
 
@@ -150,21 +139,13 @@ export default {
 		},
 	},
 	async mounted() {
-		
 		setTimeout(async () => {
 			await this.GetAllPosts()
-
 			window.addEventListener('scroll', this.handleScroll)
 		}, 1000)
 	},
 	beforeUnmount(){
-		window.removeEventListener('scroll', this.handlwScroll)
+		window.removeEventListener('scroll', this.handleScroll)
 	}
 }
 </script>
-
-<style scoped>
-.pagination-row {
-	margin-top: 24px;
-}
-</style>
