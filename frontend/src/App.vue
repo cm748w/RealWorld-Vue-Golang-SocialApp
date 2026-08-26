@@ -17,7 +17,7 @@
           size="md"
           :to="'/'"
           :icon="ActiveRoute('/') ? 'eva-home' : 'eva-home-outline'"
-          :color="ActiveRoute('/') ? 'accent' : 'grey-7'"
+          :color="ActiveRoute('/') ? 'accent' : undefined"
           aria-label="Home"
         />
         <q-btn
@@ -25,7 +25,7 @@
           size="md"
           :to="profilePath"
           :icon="ActiveRoute('/profile') ? 'eva-person' : 'eva-person-outline'"
-          :color="ActiveRoute('/profile') ? 'accent' : 'grey-7'"
+          :color="ActiveRoute('/profile') ? 'accent' : undefined"
           aria-label="Profile"
         />
         <q-btn
@@ -33,7 +33,7 @@
           size="md"
           :to="'/Chat'"
           :icon="ActiveRoute('/Chat') ? 'eva-message-square' : 'eva-message-square-outline'"
-          :color="ActiveRoute('/Chat') ? 'accent' : 'grey-7'"
+          :color="ActiveRoute('/Chat') ? 'accent' : undefined"
           aria-label="Messages"
         />
         <q-btn
@@ -41,7 +41,7 @@
           size="md"
           :to="'/Notification'"
           :icon="ActiveRoute('/Notification') ? 'eva-bell' : 'eva-bell-outline'"
-          :color="ActiveRoute('/Notification') ? 'accent' : 'grey-7'"
+          :color="ActiveRoute('/Notification') ? 'accent' : undefined"
           aria-label="Notifications"
         />
       </div>

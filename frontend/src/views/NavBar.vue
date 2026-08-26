@@ -22,7 +22,7 @@
             v-show="GetUserData?.result"
             @click="GoToChat"
             :icon="chatUnreadCount > 0 ? 'eva-message-square' : 'eva-message-square-outline'"
-            :color="chatUnreadCount > 0 ? 'accent' : 'grey-8'"
+            :color="chatUnreadCount > 0 ? 'accent' : undefined"
             class="gt-sm"
             >
             <q-badge v-if="chatUnreadCount > 0" color="negative" floating rounded :label="chatUnreadCount"/>
@@ -33,7 +33,7 @@
             v-show="GetUserData?.result"
             @click="GoToNotification"
             :icon="notificationNum > 0 ? 'eva-bell' : 'eva-bell-outline'"
-            :color="notificationNum > 0 ? 'accent' : 'grey-8'"
+            :color="notificationNum > 0 ? 'accent' : undefined"
             class="gt-sm"
             >
             <q-badge v-if="notificationNum > 0" floating color="negative" rounded :label="notificationNum"/>
@@ -42,7 +42,7 @@
          <!-- Dark mode toggle: desktop / tablet -->
          <q-btn round flat class="gt-sm q-ml-sm" @click="toggleDark"
             :icon="isDark ? 'eva-sun-outline' : 'eva-moon-outline'"
-            :color="isDark ? 'grey-7' : 'grey-8'"
+            :color="isDark ? undefined : 'grey-8'"
             aria-label="Toggle dark mode" />
 
          <!-- Avatar menu: desktop / tablet -->
@@ -85,7 +85,7 @@
          <!-- Dark mode toggle: mobile -->
          <q-btn round flat class="lt-md" @click="toggleDark"
             :icon="isDark ? 'eva-sun-outline' : 'eva-moon-outline'"
-            :color="isDark ? 'grey-7' : 'grey-8'" />
+            :color="isDark ? undefined : 'grey-8'" />
 
          <!-- Avatar: mobile only -->
          <q-btn v-show="GetUserData?.result" round flat class="lt-md" @click="handleProfileClick">
@@ -133,17 +133,17 @@
             <q-separator class="q-my-sm" />
 
             <q-item clickable v-ripple @click="handleProfileClick" v-if="GetUserData?.result">
-               <q-item-section avatar><q-icon name="eva-person-outline" color="grey-8"/></q-item-section>
+               <q-item-section avatar><q-icon name="eva-person-outline" color=""/></q-item-section>
                <q-item-section>Profile</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple @click="handleChatClick" v-if="GetUserData?.result">
-               <q-item-section avatar><q-icon name="eva-message-square-outline" color="grey-8"/></q-item-section>
+               <q-item-section avatar><q-icon name="eva-message-square-outline" color=""/></q-item-section>
                <q-item-section>Messages</q-item-section>
             </q-item>
 
             <q-item clickable v-ripple @click="handleNotificationClick" v-if="GetUserData?.result">
-               <q-item-section avatar><q-icon name="eva-bell-outline" color="grey-8"/></q-item-section>
+               <q-item-section avatar><q-icon name="eva-bell-outline" color=""/></q-item-section>
                <q-item-section>Notifications</q-item-section>
             </q-item>
 
@@ -151,7 +151,7 @@
 
             <q-item clickable v-ripple @click="toggleDark">
                <q-item-section avatar>
-                  <q-icon :name="isDark ? 'eva-sun-outline' : 'eva-moon-outline'" color="grey-8" />
+                  <q-icon :name="isDark ? 'eva-sun-outline' : 'eva-moon-outline'" color="" />
                </q-item-section>
                <q-item-section>{{ isDark ? 'Light Mode' : 'Dark Mode' }}</q-item-section>
             </q-item>
@@ -162,7 +162,7 @@
             </q-item>
 
             <q-item clickable v-ripple to="/Auth" v-else>
-               <q-item-section avatar><q-icon name="eva-log-in-outline" color="grey-8"/></q-item-section>
+               <q-item-section avatar><q-icon name="eva-log-in-outline" color=""/></q-item-section>
                <q-item-section>Login</q-item-section>
             </q-item>
          </div>

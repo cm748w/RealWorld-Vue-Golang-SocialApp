@@ -80,7 +80,7 @@
                         <q-btn flat round dense icon="eva-trash-2-outline" color="negative"
                             @click="clearImage" aria-label="Remove image" />
                     </div>
-                    <q-btn flat label="Update" color="grey-9" @click="FileUpdate" />
+                    <q-btn flat label="Update" color="" @click="FileUpdate" />
                 </q-card-section>
             </q-card>
         </div>
