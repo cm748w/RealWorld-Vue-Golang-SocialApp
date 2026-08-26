@@ -10,7 +10,7 @@
 
                     <div v-for="notify in NotifyList" :key="notify._id">
                         <q-item clickable @click="MoveToThePath(notify)"
-                            :class="{ 'bg-primary-1': !notify.isRead }">
+                            :class="{ 'bg-grey-3': !notify.isRead }">
                             <q-item-section top avatar>
                                 <q-avatar>
                                     <img :src="notify?.user?.avatar || defaultAvatar">
@@ -23,7 +23,7 @@
                             </q-item-section>
 
                             <q-item-section side v-if="!notify.isRead">
-                                <q-badge color="primary" label="New" />
+                                <q-badge color="accent" label="New" />
                             </q-item-section>
                         </q-item>
                         <q-separator spaced />

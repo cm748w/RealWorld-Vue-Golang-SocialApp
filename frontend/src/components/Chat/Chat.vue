@@ -6,7 +6,7 @@
 
                     <!-- Contact list -->
                     <div class="chat-contact" v-show="!isMobile || !selectedUser">
-                        <q-toolbar class="bg-primary text-white shadow-1">
+                        <q-toolbar class="bg-grey-9 text-white shadow-1">
                             <q-toolbar-title class="text-subtitle1">Messages</q-toolbar-title>
                         </q-toolbar>
 
@@ -63,7 +63,7 @@
                         <q-separator spaced />
                         <q-input outlined v-model="messageToSend.text" @keyup.enter="handleSendMessage"
                             label="write message.." class="q-pa-sm">
-                            <q-btn v-if="messageToSend.text != ''" @click="handleSendMessage" flat round color="primary"
+                            <q-btn v-if="messageToSend.text != ''" @click="handleSendMessage" flat round color="accent"
                                 icon="eva-arrow-right" />
                         </q-input>
                     </div>

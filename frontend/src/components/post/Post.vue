@@ -54,7 +54,7 @@
                     @keyup.enter="AddComment"
                 >
                     <template v-slot:append>
-                        <q-btn v-if="form.text !== ''" @click="AddComment" flat round color="primary" icon="eva-plus-square" />
+                        <q-btn v-if="form.text !== ''" @click="AddComment" flat round color="accent" icon="eva-plus-square" />
                     </template>
                 </q-input>
             </q-card-actions>
@@ -80,7 +80,7 @@
                         <q-btn flat round dense icon="eva-trash-2-outline" color="negative"
                             @click="clearImage" aria-label="Remove image" />
                     </div>
-                    <q-btn flat label="Update" color="primary" @click="FileUpdate" />
+                    <q-btn flat label="Update" color="grey-9" @click="FileUpdate" />
                 </q-card-section>
             </q-card>
         </div>
@@ -200,7 +200,7 @@ export default {
   }
 
   .post-avatar {
-    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.35);
+    box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.55);
   }
 
   .post-img {
