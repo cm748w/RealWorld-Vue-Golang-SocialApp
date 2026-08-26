@@ -200,7 +200,7 @@ export default {
   }
 
   .post-avatar {
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.35);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
   }
 
   .post-img {
@@ -208,5 +208,10 @@ export default {
     border-radius: 12px;
     padding: 0 16px;
   }
+}
+
+// Dark mode: post card surface
+body.body--dark .post-card .post-view {
+  background: #101828;
 }
 </style>
