@@ -2,7 +2,6 @@ package main
 
 import (
 	"Server/database"
-	"Server/middleware"
 	"Server/routes"
 	"Server/servergrpc"
 	"log"
@@ -118,8 +117,8 @@ func main() {
 	routes.SetupChatRoutes(app)         // 聊天相关路由（发送消息、获取消息等）
 	routes.SetupNotificationRoutes(app) // 通知相关路由（获取通知、标记已读等）
 
-	// 提供 Swagger 文档路由（挂鉴权，防止匿名获取完整 API 路由图）
-	app.Get("/swagger/*", middleware.AuthMiddleware, swagger.HandlerDefault)
+	// 提供 Swagger 文档路由（公开访问，无需鉴权；实际业务接口均由各路由的 AuthMiddleware 保护）
+	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// 启动服务器，监听 5000 端口
 	app.Listen(":5000")

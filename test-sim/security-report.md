@@ -130,7 +130,7 @@
 | 2.3 | commentPost 限流 10 次/分/用户 | 🟢 超限 429 |
 | 2.4 | follow 限流 10 次/分/用户 | 🟢 超限 429 |
 | 2.5 | sendChatMessage 限流 20 条/分/用户 | 🟢 第 21 条 429 |
-| 2.6 | Swagger 挂鉴权 | 🟢 匿名 401 |
+| 2.6 | Swagger 文档公开 | ~~挂鉴权~~（**应属主要求已回退为公开**：改用 Apifox 测试，且所有业务接口本身都有 AuthMiddleware 保护，文档仅暴露路由结构） | 🟡 已知可接受 |
 | 2.7 | 自定义 Fiber 错误处理，500 返回通用信息 | 🟢 不再泄露解析错误 |
 | 2.8 | CORS 收紧为本地/内网来源（API + 两个 WS） | 🟢 任意来源不再反射 |
 | 2.9 | imageUrl/selectedFile 协议白名单（http/https/data:image） | 🟢 javascript:/SVG 载荷被清空 |
