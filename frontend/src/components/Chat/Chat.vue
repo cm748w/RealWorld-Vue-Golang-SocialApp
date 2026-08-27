@@ -61,9 +61,9 @@
                         </div>
 
                         <q-separator spaced />
-                        <q-input outlined v-model="messageToSend.text" @keyup.enter="throttledSend"
+                        <q-input outlined v-model="messageToSend.text" @keyup.enter="debouncedSend"
                             label="write message.." class="q-pa-sm">
-                            <q-btn v-if="messageToSend.text != ''" @click="throttledSend" flat round color="accent"
+                            <q-btn v-if="messageToSend.text != ''" @click="debouncedSend" flat round color="accent"
                                 icon="eva-arrow-right" />
                         </q-input>
                     </div>
@@ -76,7 +76,7 @@
 
 <script>
 import { mapActions, mapGetters, mapState } from 'vuex';
-import { throttle } from '@/utils/timing';
+import { debounce } from '@/utils/timing';
 
 const DEFAULT_AVATAR = 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center';
 
@@ -137,7 +137,8 @@ export default {
         }
     },
     async mounted() {
-        this.throttledSend = throttle(this.handleSendMessage, 400, { trailing: false })
+        // 防抖（leading 模式）：第一次发送立即生效，800ms 内的重复发送直接丢弃
+        this.debouncedSend = debounce(this.handleSendMessage, 800, { leading: true, trailing: false })
         this.MainUserData = this.GetUserData?.result || {}
         await this.GetUsList()
 

@@ -28,8 +28,8 @@
 
             <div class="q-pa-md">
                 <q-btn v-if="isSameUser" label="Edit Profile" color="primary" unelevated rounded class="full-width" @click="Edit" />
-                <q-btn v-else-if="!isUserFollowing" label="Follow" color="accent" unelevated rounded class="full-width" @click="throttledFollow" />
-                <q-btn v-else label="Following" color="grey-6" unelevated rounded class="full-width" @click="throttledFollow" />
+                <q-btn v-else-if="!isUserFollowing" label="Follow" color="accent" unelevated rounded class="full-width" @click="debouncedFollow" />
+                <q-btn v-else label="Following" color="grey-6" unelevated rounded class="full-width" @click="debouncedFollow" />
             </div>
         </q-card>
     </div>
@@ -38,7 +38,7 @@
 <script>
 import { mapActions } from 'vuex'
 import { Notify } from 'quasar'
-import { throttle } from '@/utils/timing'
+import { debounce } from '@/utils/timing'
 
 const DEFAULT_AVATAR = 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center';
 
@@ -82,8 +82,8 @@ export default {
             this.syncFollowingState()
         },
         created() {
-            // Throttle the follow/unfollow toggle so rapid clicks don't double-fire
-            this.throttledFollow = throttle(this.FollowOrUnFollow, 400, { trailing: false })
+            // 防抖（leading 模式）：第一次点击立即生效，800ms 内的重复点击直接丢弃
+            this.debouncedFollow = debounce(this.FollowOrUnFollow, 800, { leading: true, trailing: false })
         },
         async FollowOrUnFollow() {
             try {
