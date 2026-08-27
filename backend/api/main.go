@@ -43,9 +43,11 @@ func main() {
 		log.Fatal("failed to connect to database:", err)
 	}
 
-	// 创建 Fiber 应用实例（自定义错误处理：对外返回通用信息，不泄露内部错误细节）
+	// 创建 Fiber 应用实例（自定义错误处理：对外返回通用信息，不泄露内部错误细节；
+	// 真实错误详情记录到服务端日志，便于排查）
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			log.Printf("HTTP error on %s %s: %v", c.Method(), c.OriginalURL(), err)
 			code := fiber.StatusInternalServerError
 			if e, ok := err.(*fiber.Error); ok {
 				code = e.Code
