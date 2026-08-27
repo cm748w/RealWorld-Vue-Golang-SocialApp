@@ -105,10 +105,29 @@
 
 ---
 
+## 六、第二轮攻击（修复后重攻，2026-08-27）—— 新发现 9 项，未动源码
+
+| # | 严重度 | 发现 | 证据 |
+|---|---|---|---|
+| 2.1 | 中 | **注册竞态 TOCTOU — 同邮箱可创建重复账号**（users 集合无 email 唯一索引） | 6 个并发注册同一邮箱 → `201×2`（**两个不同 _id**）+ 429×4；该邮箱可正常登录 |
+| 2.2 | 中 | 点赞无频率限制 | 25 次快速点赞全部 200 |
+| 2.3 | 中 | 评论无频率限制 | 25 次快速评论全部 201（配合 2.2 可刷爆帖互动） |
+| 2.4 | 中 | 关注/取关无频率限制 | 20 次快速切换全部 200（可对目标轰炸通知） |
+| 2.5 | 中 | 私信无频率限制 | 12 条快速消息全部 201（消息洪泛） |
+| 2.6 | 低 | Swagger 文档公开 | `GET /api/swagger/index.html` → 200（为攻击者提供完整路由图） |
+| 2.7 | 低 | 错误信息泄露 | 畸形 JSON → 500 + 原始 Go 解析错误文本（暴露框架内部） |
+| 2.8 | 低 | CORS 全开 | `Access-Control-Allow-Origin: http://evil.example.com`（任意来源）+ `Allow-Credentials: true` |
+| 2.9 | 低 | imageUrl/selectedFile 未消毒 | `javascript:alert(1)`、`data:image/svg+xml` 原样入库（浏览器对 `<img :src>` 阻断执行，影响有限） |
+
+**验证过的安全项（本轮未突破）**：登录锁定不影响正确密码登录（只拦截失败尝试）；聊天已读标记无法跨用户；getUser/通知/WS/限流等 P0-P2 修复全部保持生效。
+
+---
+
 ## 复现命令
 
 ```bash
 node test-sim/attack.mjs          # 全量攻击（含误报与命中标注）
 node test-sim/verify-final.mjs    # 裁决验证（只留实证）
 node test-sim/verify-fixed.mjs    # 修复后验证（24 项全部关闭）
+node test-sim/attack2.mjs         # 第二轮攻击（9 项新发现）
 ```
