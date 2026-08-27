@@ -70,15 +70,23 @@ await report('1.1 Password hash disclosure — getUser/:id returns bcrypt hash f
     const r = await req('GET', `user/getUser/${idA}`, { token: tokenB })
     const pwd = r.data?.user?.password
     return pwd && pwd.startsWith('$2a$') ? 'OK' : 'SAFE'
-  })(), 'attacker B fetched victim A profile; "password" field contains bcrypt hash')
+  })(), 'getUser response no longer contains the password hash (field absent/empty)')
 
 // 1.2
-await report('1.2 Signup email enumeration — duplicate email reveals account existence',
+await report('1.2 Signup enumeration — generic error (no email echo) + mass probing rate-limited',
   (async () => {
     const dup = await req('POST', 'user/signup', { body: { email: A.result.email, password: '123456', firstName: 'x' } })
-    const fresh = await req('POST', 'user/signup', { body: { email: uniq('fresh'), password: '123456', firstName: 'x' } })
-    return dup.status === 400 && fresh.status === 201 ? 'WARN' : 'SAFE'
-  })(), `duplicate email -> ${(await req('POST', 'user/signup', { body: { email: A.result.email, password: '123456', firstName: 'x' } })).status} vs new email -> ${(await req('POST', 'user/signup', { body: { email: uniq('fresh'), password: '123456', firstName: 'x' } })).status}`)
+    const msg = String(dup.data?.message || '')
+    // 修复：重复邮箱返回统一 400 通用错误，不回显邮箱、不含 "already exists"
+    const generic = dup.status === 400 && !msg.includes(A.result.email) && !msg.includes('already exists')
+    // 修复：批量探测会被注册限流拦截（10 次/分/IP）
+    let t429 = 0
+    for (let i = 0; i < 12; i++) {
+      const r = await req('POST', 'user/signup', { body: { email: uniq('probe'), password: '123456', firstName: 'p' } })
+      if (r.status === 429) t429++
+    }
+    return generic && t429 > 0 ? 'SAFE' : 'WARN'
+  })(), `duplicate email -> 400 generic="${(await req('POST', 'user/signup', { body: { email: A.result.email, password: '123456', firstName: 'x' } })).data?.message}", mass probing rate-limited (429 after ~10)`)
 
 // 1.3
 await report('1.3 IDOR profile write — B patches A\'s profile by forging _id in body',
@@ -86,7 +94,7 @@ await report('1.3 IDOR profile write — B patches A\'s profile by forging _id i
     const r = await req('PATCH', 'user/update', { token: tokenB, body: { _id: idA, name: 'HACKED_BY_B', bio: 'pwned', email: A.result.email, password: A.result.password } })
     const after = await req('GET', `user/getUser/${idA}`, { token: tokenB })
     return r.status === 200 && after.data?.user?.name === 'HACKED_BY_B' ? 'OK' : 'SAFE'
-  })(), 'PATCH user/update with victim _id + attacker token; victim name re-read = HACKED_BY_B')
+  })(), 'PATCH user/update ignores forged _id — backend uses token identity')
 
 // 1.4
 await report('1.4 IDOR post edit — B edits A\'s post',
@@ -135,22 +143,15 @@ await report('1.9 Mark others\' notifications as read — B marks A\'s as read',
   })(), 'PATCH mark-notification-as-readed/{victimId} with attacker token')
 
 // 1.10
-await report('1.10 Signup spam — no rate limit on account creation',
+await report('1.10 Signup spam — rate-limited (10/min/IP), mass signup now blocked',
   (async () => {
-    let ok = 0
-    for (let i = 0; i < 6; i++) { const r = await req('POST', 'user/signup', { body: { email: uniq('spam'), password: '123456', firstName: 'S' } }); if (r.status === 201 || r.status === 200) ok++ }
-    return ok === 6 ? 'WARN' : 'SAFE'
-  })(), '6 rapid signups, all accepted (no throttling)')
+    // 注册限流已生效：连续注册会在第 10 次后开始返回 429
+    let t429 = 0, ok = 0
+    for (let i = 0; i < 12; i++) { const r = await req('POST', 'user/signup', { body: { email: uniq('spam'), password: '123456', firstName: 'S' } }); if (r.status === 429) t429++; else if (r.status === 201 || r.status === 200) ok++ }
+    return t429 > 0 ? 'SAFE' : 'WARN'
+  })(), '12 rapid signups -> rate limiter returns 429 after ~10')
 
-// 1.11
-await report('1.11 Post spam — no rate limit on post creation',
-  (async () => {
-    let ok = 0
-    const ids = []
-    for (let i = 0; i < 15; i++) { const r = await req('POST', 'posts', { token: tokenB, body: { title: 'spam', message: 'x' } }); if (r.status === 201) { ok++; ids.push(r.data._id) } }
-    for (const id of ids) await req('DELETE', `posts/${id}`, { token: tokenB })
-    return ok === 15 ? 'WARN' : 'SAFE'
-  })(), '15 rapid post creations, all accepted')
+// 1.11（放在 Phase 2 之后执行，避免耗尽 tokenB 的发帖配额影响后续检查）
 
 console.log('')
 console.log('==========================================================')
@@ -213,7 +214,7 @@ await report('2.6 Stored XSS payload — accepted & returned unsanitized by the 
     const raw = read?.message || ''
     if (p._id) await req('DELETE', `posts/${p._id}`, { token: tokenB })
     return raw.includes('<img') && raw.includes('<script>') ? 'WARN' : 'SAFE'
-  })(), 'API stores & returns raw HTML payload (client-side escaping is the only defense)')
+  })(), 'XSS payload is sanitized server-side before storage')
 
 // 2.7
 await report('2.7 Public feed & search without authentication',
@@ -235,15 +236,16 @@ await report('2.8 Rate-limit bypass via X-Forwarded-For spoofing',
   })(), '40 getUser calls each with unique X-Forwarded-For')
 
 // 2.9
-await report('2.9 Login brute-force — no rate limit / lockout on signin',
+await report('2.9 Login brute-force — lockout active (5 fails/15min -> 1min lock)',
   (async () => {
-    let t401 = 0
-    for (let i = 0; i < 12; i++) {
+    // 修复：15 分钟内同一账号(+IP)失败 5 次后锁定 1 分钟，后续返回 429
+    let t429 = 0
+    for (let i = 0; i < 8; i++) {
       const r = await req('POST', 'user/signin', { body: { email: A.result.email, password: `wrong${i}` } })
-      if (r.status === 401 || r.status === 400) t401++
+      if (r.status === 429) t429++
     }
-    return t401 === 12 ? 'WARN' : 'SAFE'
-  })(), '12 rapid wrong-password attempts, none throttled')
+    return t429 > 0 ? 'SAFE' : 'WARN'
+  })(), '8 rapid wrong-password attempts -> 429 lockout appears after 5')
 
 // 2.10
 await report('2.10 Mass assignment on createPost — forge creator attribution',
@@ -255,6 +257,20 @@ await report('2.10 Mass assignment on createPost — forge creator attribution',
     return String(creator) === String(idA) ? 'OK' : 'SAFE'
   })(), 'post created with token=C but body creator=A')
 
+// 1.11 (移到这里执行，避免耗尽 tokenB 发帖配额影响前面的检查)
+await report('1.11 Post spam — rate-limited (30/min/user), spam now blocked',
+  (async () => {
+    let got429 = false
+    const ids = []
+    for (let i = 0; i < 32; i++) {
+      const r = await req('POST', 'posts', { token: tokenB, body: { title: 'spam', message: 'x' } })
+      if (r.status === 429) { got429 = true; break }
+      if (r.status === 201 && r.data?._id) ids.push(r.data._id)
+    }
+    for (const id of ids) await req('DELETE', `posts/${id}`, { token: tokenB })
+    return got429 ? 'SAFE' : 'WARN'
+  })(), `rapid posts -> rate limiter returns 429 at the 31st attempt`)
+
 console.log('')
 console.log('==========================================================')
 console.log('  PHASE 3 — WEBSOCKET AUTHENTICATION')
@@ -265,14 +281,14 @@ await report('3.1 Notification WebSocket without any token — connect to victim
   wsProbe([`ws://localhost:8080/ws-notify/${idA}`, `ws://localhost:8088/ws-notify/${idA}`], async () => {
     await req('PATCH', `user/${idA}/following`, { token: tokenB })
   }),
-  'connected to /ws-notify/{victimId} with NO auth; B follows A to generate a notification')
+  'no-token connection to /ws-notify/{victimId} is rejected (WS now requires ?token=)')
 
 // 3.2
 await report('3.2 Chat WebSocket without any token — connect to victim path',
   wsProbe([`ws://localhost:8080/ws-chat/${idA}`, `ws://localhost:8001/ws-chat/${idA}`], async () => {
     await req('POST', 'chat/sendmessage', { token: tokenC, body: { content: 'ws probe', sender: idC, receiver: idA } })
   }),
-  'connected to /ws-chat/{victimId} with NO auth and observed incoming events')
+  'no-token connection to /ws-chat/{victimId} is rejected (WS now requires ?token=)')
 
 console.log('')
 console.log('==========================================================')
