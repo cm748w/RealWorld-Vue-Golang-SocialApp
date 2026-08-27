@@ -27,6 +27,13 @@ import (
 // @Router /chat/sendmessage [post]
 func SendMessage(c *fiber.Ctx) error {
 
+	// 私信限流：每用户每分钟最多 20 条
+	if !messageLimiter.Allow(c.Locals("userId").(string)) {
+		return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+			"message": "Too many messages, please slow down",
+		})
+	}
+
 	var MessageSchema = database.DB.Collection("messages")
 	var unreadMsgSchema = database.DB.Collection("unreadmessages")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
