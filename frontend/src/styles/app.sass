@@ -97,6 +97,9 @@ body
   backdrop-filter: blur(10px)
   border-top: 1px solid rgba(15, 23, 42, 0.08)
   box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06)
+  // Force the icon colour adaptively. Quasar's marginal footer forces
+  // `color: #fff`, otherwise the unselected tabs render white-on-white.
+  color: #0F172A !important
 
   .q-btn
     margin: 0
@@ -138,6 +141,7 @@ body.body--dark
   .bottom-nav
     background: rgba(16, 24, 40, 0.92)
     border-top-color: rgba(255, 255, 255, 0.08)
+    color: #E2E8F0 !important
 
   // scrollbar
   ::-webkit-scrollbar-thumb

@@ -61,9 +61,9 @@
                         </div>
 
                         <q-separator spaced />
-                        <q-input outlined v-model="messageToSend.text" @keyup.enter="handleSendMessage"
+                        <q-input outlined v-model="messageToSend.text" @keyup.enter="throttledSend"
                             label="write message.." class="q-pa-sm">
-                            <q-btn v-if="messageToSend.text != ''" @click="handleSendMessage" flat round color="accent"
+                            <q-btn v-if="messageToSend.text != ''" @click="throttledSend" flat round color="accent"
                                 icon="eva-arrow-right" />
                         </q-input>
                     </div>
@@ -76,6 +76,7 @@
 
 <script>
 import { mapActions, mapGetters, mapState } from 'vuex';
+import { throttle } from '@/utils/timing';
 
 const DEFAULT_AVATAR = 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center';
 
@@ -136,6 +137,7 @@ export default {
         }
     },
     async mounted() {
+        this.throttledSend = throttle(this.handleSendMessage, 400, { trailing: false })
         this.MainUserData = this.GetUserData?.result || {}
         await this.GetUsList()
 
