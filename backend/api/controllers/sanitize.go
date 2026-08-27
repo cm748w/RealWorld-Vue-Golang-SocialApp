@@ -29,3 +29,20 @@ func SanitizeUser(u models.UserModel) models.UserModel {
 	u.Password = ""
 	return u
 }
+
+// SanitizeImageURL 只允许 http/https 与 data:image/* 的图片地址，
+// 其它协议（javascript:、vbscript:、data:text/html、file: 等）一律清空。
+// 前端头像/帖子配图支持 base64（data:image/...），所以 data:image 需要放行。
+func SanitizeImageURL(u string) string {
+	u = strings.TrimSpace(u)
+	if u == "" {
+		return ""
+	}
+	lower := strings.ToLower(u)
+	if strings.HasPrefix(lower, "http://") ||
+		strings.HasPrefix(lower, "https://") ||
+		strings.HasPrefix(lower, "data:image/") {
+		return u
+	}
+	return ""
+}

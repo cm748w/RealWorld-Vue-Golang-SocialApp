@@ -2,10 +2,12 @@ package main
 
 import (
 	"Server/database"
+	"Server/middleware"
 	"Server/routes"
 	"Server/servergrpc"
 	"log"
 	"net"
+	"net/url"
 
 	_ "Server/docs"
 	pb "Server/protos"
@@ -39,14 +41,36 @@ func main() {
 		log.Fatal("failed to connect to database:", err)
 	}
 
-	// 创建 Fiber 应用实例
-	app := fiber.New()
+	// 创建 Fiber 应用实例（自定义错误处理：对外返回通用信息，不泄露内部错误细节）
+	app := fiber.New(fiber.Config{
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			if e, ok := err.(*fiber.Error); ok {
+				code = e.Code
+			}
+			return c.Status(code).JSON(fiber.Map{
+				"message": "internal server error",
+			})
+		},
+	})
 
-	// 配置 CORS 中间件，允许跨域请求
+	// 配置 CORS 中间件：仅允许本地/内网来源（localhost、127.0.0.1、私有网段），
+	// 拒绝任意来源，避免被恶意网站跨域调用
 	app.Use(cors.New(cors.Config{
-		AllowCredentials: true, // 允许携带凭证（如 cookies）
+		AllowCredentials: true,
 		AllowOriginsFunc: func(origin string) bool {
-			return true // 允许所有来源的请求
+			u, err := url.Parse(origin)
+			if err != nil {
+				return false
+			}
+			host := u.Hostname()
+			if host == "localhost" || host == "127.0.0.1" || host == "::1" {
+				return true
+			}
+			if ip := net.ParseIP(host); ip != nil && (ip.IsPrivate() || ip.IsLoopback()) {
+				return true
+			}
+			return false
 		},
 	}))
 
@@ -82,8 +106,8 @@ func main() {
 	routes.SetupChatRoutes(app)         // 聊天相关路由（发送消息、获取消息等）
 	routes.SetupNotificationRoutes(app) // 通知相关路由（获取通知、标记已读等）
 
-	// 提供 Swagger 文档路由，用于 API 文档的访问
-	app.Get("/swagger/*", swagger.HandlerDefault)
+	// 提供 Swagger 文档路由（挂鉴权，防止匿名获取完整 API 路由图）
+	app.Get("/swagger/*", middleware.AuthMiddleware, swagger.HandlerDefault)
 
 	// 启动服务器，监听 5000 端口
 	app.Listen(":5000")

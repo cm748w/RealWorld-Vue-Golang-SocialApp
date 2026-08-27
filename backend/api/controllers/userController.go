@@ -208,7 +208,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	update := bson.M{"name": SanitizeText(user.Name), "imageUrl": user.ImageUrl, "bio": SanitizeText(user.Bio)}
+	update := bson.M{"name": SanitizeText(user.Name), "imageUrl": SanitizeImageURL(user.ImageUrl), "bio": SanitizeText(user.Bio)}
 
 	result, err := UserSchema.UpdateOne(ctx, bson.M{"_id": userid}, bson.M{"$set": update})
 
@@ -249,6 +249,14 @@ func UpdateUser(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Router /user/{id}/following [patch]
 func FollowingUser(c *fiber.Ctx) error {
+
+	// 关注/取关限流：每用户每分钟最多 10 次
+	suidLocal, _ := c.Locals("userId").(string)
+	if !followLimiter.Allow(suidLocal) {
+		return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+			"message": "Too many follow actions, please slow down",
+		})
+	}
 
 	var UserSchema = database.DB.Collection("users")
 	var NotificationSchema = database.DB.Collection("notifications")
