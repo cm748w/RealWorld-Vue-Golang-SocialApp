@@ -6,6 +6,9 @@ yarn.lock
 # production build output
 dist/
 
+# runtime temp dir used by test-sim/module-test.mjs (copies of src modules)
+test-sim/
+
 # # local env files
 # .env.local
 # .env.*.local
