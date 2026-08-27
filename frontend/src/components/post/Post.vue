@@ -38,7 +38,7 @@
                 <q-separator class="q-my-sm" />
 
                 <div class="row items-center justify-between q-gutter-sm">
-                    <q-btn flat round :color="UserLike ? 'accent' : undefined" @click="Like">
+                    <q-btn flat round :color="UserLike ? 'accent' : undefined" @click="throttledLike">
                         <q-icon :name="UserLike ? 'eva-heart' : 'eva-heart-outline'" size="20px" />
                         <span v-if="LikesCount()" class="q-ml-xs">{{ LikesCount() }}</span>
                     </q-btn>
@@ -90,6 +90,7 @@
 <script>
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex'
+import { throttle } from '@/utils/timing'
 
 const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/1077/1077063.png';
 
@@ -174,6 +175,10 @@ export default {
     },
     computed:{
         ...mapGetters('auth', ['GetUserData']),
+    },
+    created() {
+        // Throttle rapid double-clicks on the like button to avoid duplicate like requests
+        this.throttledLike = throttle(this.Like, 400, { trailing: false })
     },
     async mounted(){
         this.localPost = JSON.parse(JSON.stringify(this.post))

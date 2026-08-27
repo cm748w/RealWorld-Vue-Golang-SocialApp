@@ -173,6 +173,7 @@
 
 <script>
 import { mapGetters, mapMutations, mapActions, mapState } from 'vuex';
+import { debounce } from '@/utils/timing';
 
 const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/3237/3237472.png';
 
@@ -214,7 +215,7 @@ export default {
          immediate: true,
       },
       "RealTimeNotify.notifyideslistNumber": async function () {
-         this.UNreadedNotifyCount()
+         this.debouncedUnreadNotifyCount()
       },
    },
    methods: {
@@ -290,6 +291,9 @@ export default {
    },
    async mounted() {
       this.SetData();
+      // Debounce the notification refetch so a burst of WebSocket events
+      // (connection replay / rapid pushes) collapses into a single request.
+      this.debouncedUnreadNotifyCount = debounce(this.UNreadedNotifyCount, 500)
       await this.bootstrapUnreadCounts()
    },
 }
