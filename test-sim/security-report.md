@@ -87,9 +87,28 @@
 
 ---
 
-## 四、复现命令
+## 五、修复状态（已按 P0→P1→P2 全部修复并验证）
+
+| # | 发现 | 修复 | 验证 |
+|---|---|---|---|
+| 1 | 密码哈希公开泄露 | getUser 挂鉴权；所有 user 响应剔除 password（含搜索接口）+ `json:"password,omitempty"` | 🟢 `password=undefined` |
+| 2 | 通知接口公开 | 挂鉴权 + 校验 userid 与 token 一致 + 精确匹配过滤 | 🟢 匿名/跨用户均 401 |
+| 3 | 通知 WS 窃听 | 两个 WS 服务校验 `?token=` JWT（iss 与路径 id 一致） | 🟢 无 token 拒绝、有 token 连通 |
+| 4 | 登录爆破 | 每 IP 20 次/分 + 15 分钟内 5 次失败锁定 1 分钟 | 🟢 第 6 次 429 |
+| 5 | 存储型 XSS | 服务端消毒（script 块、事件属性、javascript:/data: URI），覆盖帖子/评论/资料/聊天 | 🟢 载荷入库后为空 |
+| 6 | 邮箱枚举 | 重复注册返回统一 400 通用错误（不回显邮箱）+ 注册限流 10 次/分/IP | 🟢 通用消息 |
+| 7 | 灌水 | signup 10 次/分/IP；发帖 30 次/分/用户 | 🟢 触发 429 |
+| 8 | 帖子公开 | feed/search/详情挂鉴权 | 🟢 匿名 401 |
+
+- 回归：`full-flow.mjs` 45/45、`module-test.mjs` 20/20、`verify-fixed.mjs` 24/24 全部通过
+- 三个后端服务已用修复后的代码重启（API :5000、通知 :8088/8090、聊天 :8001）
+
+---
+
+## 复现命令
 
 ```bash
 node test-sim/attack.mjs          # 全量攻击（含误报与命中标注）
 node test-sim/verify-final.mjs    # 裁决验证（只留实证）
+node test-sim/verify-fixed.mjs    # 修复后验证（24 项全部关闭）
 ```
