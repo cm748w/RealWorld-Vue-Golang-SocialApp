@@ -26,7 +26,10 @@ func ValidateUser(c *fiber.Ctx) error {
 
 	// 解析请求体
 	if err := c.BodyParser(&body); err != nil {
-		return err
+		// 畸形/非法请求体属于客户端错误：返回 400 通用信息，不泄露解析细节
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid request body",
+		})
 	}
 
 	// 验证结构体
