@@ -80,6 +80,13 @@ func Register(c *fiber.Ctx) error {
 	result, err := UserSchema.InsertOne(ctx, &newUser)
 
 	if err != nil {
+		// 唯一索引兜底：并发注册同邮箱时后到者触发 DuplicateKey，返回与“邮箱已存在”一致
+		// 的统一错误，避免信息泄露
+		if mongo.IsDuplicateKeyError(err) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Registration failed, please try again",
+			})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"details": err.Error(),
 		})
