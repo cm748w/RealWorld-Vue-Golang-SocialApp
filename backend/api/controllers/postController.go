@@ -43,6 +43,13 @@ func getEnvInt(key string, fallback int) int {
 // @Router /posts [post]
 func CreatePost(c *fiber.Ctx) error {
 
+	// 发帖限流：每用户每分钟最多 30 次
+	if !postCreateLimiter.Allow(c.Locals("userId").(string)) {
+		return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+			"message": "Too many posts, please slow down",
+		})
+	}
+
 	var UserSchema = database.DB.Collection("users")
 	var PostSchema = database.DB.Collection("posts")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -56,14 +63,14 @@ func CreatePost(c *fiber.Ctx) error {
 		})
 	}
 
-	// 组装帖子数据
+	// 组装帖子数据（标题/内容做 XSS 消毒）
 	var post models.PostModel
 	post.Creator = c.Locals("userId").(string)
 	post.Likes = make([]string, 0)
 	post.Comments = make([]string, 0)
 	post.CreatedAt = time.Now()
-	post.Title = body.Title
-	post.Message = body.Message
+	post.Title = SanitizeText(body.Title)
+	post.Message = SanitizeText(body.Message)
 	post.SelectedFile = body.SelectedFile
 	//
 
@@ -209,9 +216,9 @@ func UpdatePost(c *fiber.Ctx) error {
 		})
 	}
 
-	// 更新帖子字段
-	authPost.Title = newData.Title
-	authPost.Message = newData.Message
+	// 更新帖子字段（标题/内容做 XSS 消毒）
+	authPost.Title = SanitizeText(newData.Title)
+	authPost.Message = SanitizeText(newData.Message)
 	authPost.SelectedFile = newData.SelectedFile
 	// 执行更新
 	_, err = PostSchema.UpdateOne(ctx, bson.M{"_id": authPost.ID}, bson.M{"$set": authPost})
@@ -444,6 +451,11 @@ func GetPostsUsersBySearch(c *fiber.Ctx) error {
 
 	}
 
+	// 剔除密码哈希后再返回搜索结果
+	for i := range users {
+		users[i] = SanitizeUser(users[i])
+	}
+
 	return c.JSON(fiber.Map{
 		"user":  users,
 		"posts": posts,
@@ -490,7 +502,7 @@ func CommentPost(c *fiber.Ctx) error {
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	err = PostSchema.FindOneAndUpdate(ctx,
 		bson.M{"_id": postid},
-		bson.M{"$push": bson.M{"comments": b.Value}},
+		bson.M{"$push": bson.M{"comments": SanitizeText(b.Value)}},
 		opts,
 	).Decode(&post)
 	if err != nil {
