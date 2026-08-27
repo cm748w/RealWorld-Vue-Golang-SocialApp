@@ -183,9 +183,11 @@ export default {
     async mounted(){
         this.localPost = JSON.parse(JSON.stringify(this.post))
 
+        // 拉取作者资料；后端对 user/getUser 有 30次/分/IP 的限流，
+        // 万一失败就回退到帖子内嵌的作者名，避免作者名空白。
         const response = await this.GetUserById(this.localPost?.creator)
-        const { user } = response || {}
-        this.user = user || {}
+        const fetched = response?.user || {}
+        this.user = fetched._id ? fetched : { name: this.localPost?.name || 'Unknown' }
         const uid = this.GetUserData?.result?._id
         const likes = Array.isArray(this.localPost.likes) ? this.localPost.likes : []
         var isLike = likes.find((like)=> like == uid)

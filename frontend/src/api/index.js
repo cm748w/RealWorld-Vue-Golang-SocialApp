@@ -73,7 +73,7 @@ function cachedGet(url, config = {}) {
       // 单个请求可用 cacheTTL 覆盖，0 表示不缓存
       const ttl = config.cacheTTL !== undefined ? config.cacheTTL : GET_TTL;
       if (ttl > 0) {
-        GET_CACHE.set(key, { response, expiresAt: Date.now() + ttl });
+        GET_CACHE.set(key, { response, expiresAt: Date.now() + ttl, url });
       }
       return response;
     })
@@ -85,35 +85,69 @@ function cachedGet(url, config = {}) {
   return promise;
 }
 
+// 按资源选择性失效缓存：
+// 写操作只清掉它影响的数据族，避免「点赞把作者资料缓存也清了」导致
+// 重新进入首页时把所有作者重查一遍（后端 getUser 每 IP 每分钟限 30 次）。
+function clearCacheFor(url) {
+  const u = String(url || "");
+  let families = [];
+  if (u.includes("posts")) {
+    families = ["posts"];
+  } else if (u.includes("notification")) {
+    families = ["notification"];
+  } else if (u.includes("chat")) {
+    families = ["chat"];
+  } else if (u.includes("user/")) {
+    families = ["user/getUser", "user/getSug"];
+  }
+
+  // 未知资源：保守起见全清
+  if (!families.length) {
+    GET_CACHE.clear();
+    return;
+  }
+
+  for (const [key, entry] of GET_CACHE) {
+    const entryUrl = entry?.url || "";
+    if (families.some((f) => entryUrl.includes(f))) {
+      GET_CACHE.delete(key);
+    }
+  }
+}
+
 // 记录原始方法，避免递归
 const _get = API.get.bind(API);
 
 // 拦截所有 GET：走缓存/去重
 API.get = (url, config = {}) => cachedGet(url, config);
 
-// 写请求成功后清空 GET 缓存，确保下一次读取是最新数据
+// 写请求成功后按资源选择性清空相关 GET 缓存，保证下次读取是最新数据
 ["post", "put", "patch", "delete"].forEach((method) => {
   const original = API[method].bind(API);
   API[method] = (url, data, config = {}) =>
     original(url, data, config).then((response) => {
-      GET_CACHE.clear();
+      clearCacheFor(url);
       return response;
     });
 });
 
 // ---------------------------------------------------------------------------
-//  429 退避重试：读 Retry-After，没有则用固定退避，最多重试一次
+//  429 处理：本后端限流窗口是 1 分钟（getUser 每 IP 30 次/分），固定退避
+//  重试必然仍在窗口内、只会白等。因此只在服务端给出 Retry-After 时才重试，
+//  否则立即失败，避免无谓延迟和加重后端负载。
 // ---------------------------------------------------------------------------
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config;
     if (error.response?.status === 429 && config && !config.__retried) {
-      config.__retried = true;
       const retryAfter = error.response.headers["retry-after"];
-      const delay = retryAfter ? Number(retryAfter) * 1000 : 1500;
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      return API(config);
+      if (retryAfter) {
+        config.__retried = true;
+        const delay = Number(retryAfter) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return API(config);
+      }
     }
     return Promise.reject(error);
   }
