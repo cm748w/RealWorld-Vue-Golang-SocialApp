@@ -291,10 +291,10 @@ export default {
    },
    async mounted() {
       this.SetData();
-      // Debounce the notification refetch so a burst of WebSocket events
-      // (connection replay / rapid pushes) collapses into a single request.
+      // 初始化防抖：WebSocket 连续通知（连接重放 / 快速推送）合并成一次请求。
+      // 首次加载与登录状态变化的刷新由 GetUserData 的 immediate watcher 触发，
+      // 这里不再重复 bootstrap，避免同一批未读接口请求两遍。
       this.debouncedUnreadNotifyCount = debounce(this.UNreadedNotifyCount, 500)
-      await this.bootstrapUnreadCounts()
    },
 }
 

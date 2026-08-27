@@ -2,6 +2,9 @@
 import * as api from '@/api/index.js'
 import { emitProfileSync } from './profileSync.js'
 
+// 关注列表缓存：避免每次进入 Chat 都把 followers+following 逐个重查（N+1）
+const FOLLOWERS_TTL = 30_000
+
 function normalizeUserResponse(data) {
     const payload = data?.user || data?.result || data?.data || data || {}
     const user = payload?.user || payload?.result || payload
@@ -27,7 +30,9 @@ const Users = {
         // 推荐用户列表
         recommendedUsers: [],
         // 用户的 followers 和 following 列表
-        userFollowersFollowing: []
+        userFollowersFollowing: [],
+        // 关注列表最后一次拉取时间（用于短 TTL 缓存）
+        followersFetchedAt: 0
     },
     getters: {
         /**
@@ -103,6 +108,9 @@ const Users = {
          */
         SetUserFollowersFollowing(state, payload) {
             state.userFollowersFollowing = payload || []
+        },
+        SetFollowersFetchedAt(state, ts) {
+            state.followersFetchedAt = ts
         }
     },
     actions: {
@@ -177,6 +185,8 @@ const Users = {
         async FollowUser({ commit, rootState }, ProfileId) {
             try {
                 await api.following(ProfileId)
+                // 关注状态变了，使关注列表缓存失效，下次进入 Chat 重新拉取
+                commit('SetFollowersFetchedAt', 0)
 
                 const refreshedProfile = await api.fetchUserProfile(ProfileId)
                 const normalizedProfile = normalizeUserResponse(refreshedProfile.data)
@@ -239,13 +249,18 @@ const Users = {
          * @param {Object} context - Vuex 上下文
          * @returns {Promise<Array>} - followers 和 following 合并后的用户列表
          */
-        async FetchUserFollowersFollowing({ commit, rootState }) {
+        async FetchUserFollowersFollowing({ commit, rootState, state }) {
             try {
                 const localProfile = JSON.parse(localStorage.getItem('profile') || 'null')
                 const currentUserId = rootState?.auth?.authData?.result?._id || localProfile?.result?._id
                 if (!currentUserId) {
                     console.error('User profile not found in localStorage')
                     return []
+                }
+
+                // 短 TTL 缓存：30s 内再次进入 Chat 直接复用，避免 N+1 逐个重查
+                if (state.userFollowersFollowing.length && Date.now() - (state.followersFetchedAt || 0) < FOLLOWERS_TTL) {
+                    return state.userFollowersFollowing
                 }
 
                 // Always refresh current user from backend so followers/following are up-to-date.
@@ -285,6 +300,7 @@ const Users = {
                 }
                 
                 commit('SetUserFollowersFollowing', userdata)
+                commit('SetFollowersFetchedAt', Date.now())
                 return userdata
             } catch (error) {
                 console.error('Error fetching followers/following:', error)
