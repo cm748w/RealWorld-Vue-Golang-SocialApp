@@ -8,6 +8,8 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"os"
+	"strings"
 
 	_ "Server/docs"
 	pb "Server/protos"
@@ -54,8 +56,10 @@ func main() {
 		},
 	})
 
-	// 配置 CORS 中间件：仅允许本地/内网来源（localhost、127.0.0.1、私有网段），
-	// 拒绝任意来源，避免被恶意网站跨域调用
+	// 配置 CORS 中间件：
+	//  - 同源请求（Docker 部署经 nginx 反代，浏览器与 API 同源）不需要 CORS，天然可用；
+	//  - 跨源仅放行 本地/内网 与 CORS_ALLOWED_ORIGINS 配置的域名，其余不响应 ACAO 头
+	//    （Fiber 的 CORS 中间件只控制响应头、不会拦截请求，因此不影响任何合法流量）
 	app.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 		AllowOriginsFunc: func(origin string) bool {
@@ -69,6 +73,12 @@ func main() {
 			}
 			if ip := net.ParseIP(host); ip != nil && (ip.IsPrivate() || ip.IsLoopback()) {
 				return true
+			}
+			// 生产环境显式配置的允许来源（如 https://example.com）
+			for _, o := range strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",") {
+				if o != "" && strings.TrimSpace(o) == origin {
+					return true
+				}
 			}
 			return false
 		},
