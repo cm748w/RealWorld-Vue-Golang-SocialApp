@@ -4,6 +4,14 @@ import axios from "axios";
 // 这样通过任意 IP/域名访问（含局域网 IP）都能正确连上后端，不再依赖构建时写死的地址。
 const API = axios.create({ baseURL: '/api/' });
 
+// 请求拦截器：为每个请求附加 Bearer token（从 localStorage 读取）
+API.interceptors.request.use((req) => {
+    if (localStorage.getItem('profile')) {
+        req.headers.Authorization = `Bearer ${JSON.parse(localStorage.getItem('profile')).token}`;
+    }
+    return req;
+})
+
 // ---------------------------------------------------------------------------
 //  GET 请求缓存 + 并发去重
 //  背景：前端在挂载 / watcher 触发时会对相同接口发出大量重复请求，导致后端 429。
