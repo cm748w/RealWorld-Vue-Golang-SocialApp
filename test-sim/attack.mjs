@@ -269,7 +269,7 @@ await report('1.11 Post spam — rate-limited (30/min/user), spam now blocked',
     }
     for (const id of ids) await req('DELETE', `posts/${id}`, { token: tokenB })
     return got429 ? 'SAFE' : 'WARN'
-  })(), `rapid posts -> rate limiter returns 429 at the 31st attempt`)
+  })(), `rapid posts -> rate limiter returns 429 at the 6th attempt (5/min limit)`)
 
 console.log('')
 console.log('==========================================================')
