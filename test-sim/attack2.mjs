@@ -43,14 +43,14 @@ await report('1.1 Signup race — duplicate accounts for the same email (TOCTOU,
   })(), '5 concurrent signups with the same email -> how many were created?')
 
 // 1.2 like spam
-await report('1.2 No rate limit on likePost — mass like spam possible',
+await report('1.2 likePost rate-limited (30/min/user) — mass like spam blocked',
   (async () => {
     const p = (await req('POST', 'posts', { token: tA, body: { title: 'liketarget', message: 'x' } })).data
-    let ok = 0
-    for (let i = 0; i < 25; i++) { const r = await req('PATCH', `posts/${p._id}/likePost`, { token: tB }); if (r.status === 200) ok++ }
+    let got429 = false, ok = 0
+    for (let i = 0; i < 32; i++) { const r = await req('PATCH', `posts/${p._id}/likePost`, { token: tB }); if (r.status === 429) { got429 = true; break }; if (r.status === 200) ok++ }
     await req('DELETE', `posts/${p._id}`, { token: tA })
-    return ok === 25 ? 'WARN' : 'SAFE'
-  })(), '25 rapid likes, all accepted')
+    return got429 ? 'SAFE' : 'WARN'
+  })(), 'rapid likes -> 429 after 30')
 
 // 1.3 comment spam
 await report('1.3 No rate limit on commentPost — mass comment spam possible',
@@ -71,12 +71,12 @@ await report('1.4 No rate limit on follow/unfollow toggle',
   })(), '20 rapid follow/unfollow toggles, all accepted')
 
 // 1.5 message spam
-await report('1.5 No rate limit on sendChatMessage — message flood possible',
+await report('1.5 sendChatMessage rate-limited (20/min/user) — message flood blocked',
   (async () => {
-    let ok = 0
-    for (let i = 0; i < 12; i++) { const r = await req('POST', 'chat/sendmessage', { token: tA, body: { content: `flood${i}`, sender: idA, receiver: idB } }); if (r.status === 200 || r.status === 201) ok++ }
-    return ok === 12 ? 'WARN' : 'SAFE'
-  })(), '12 rapid messages, all accepted')
+    let got429 = false, ok = 0
+    for (let i = 0; i < 22; i++) { const r = await req('POST', 'chat/sendmessage', { token: tA, body: { content: `flood${i}`, sender: idA, receiver: idB } }); if (r.status === 429) { got429 = true; break }; if (r.status === 200 || r.status === 201) ok++ }
+    return got429 ? 'SAFE' : 'WARN'
+  })(), 'rapid messages -> 429 after 20')
 
 // 1.6 login lockout nuance: correct password blocked while locked (local same-IP DoS demo)
 await report('1.6 Login lockout nuance — correct password also blocked during lock window',

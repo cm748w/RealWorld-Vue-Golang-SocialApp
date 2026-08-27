@@ -44,5 +44,15 @@ func Connect() error {
 		fmt.Printf("warning: failed to create unreadmessages unique index: %v\n", err)
 	}
 
+	// 唯一索引：邮箱不允许重复（堵住并发注册 TOCTOU 竞态）
+	usersCollection := DB.Collection("users")
+	_, err = usersCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "email", Value: 1}},
+		Options: options.Index().SetUnique(true).SetName("uniq_user_email"),
+	})
+	if err != nil {
+		fmt.Printf("warning: failed to create users unique email index: %v\n", err)
+	}
+
 	return nil
 }

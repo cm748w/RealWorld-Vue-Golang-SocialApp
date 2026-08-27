@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"net"
+	"net/url"
 	"realTimeChat/realtime"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,7 +23,18 @@ func main() {
 	app.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 		AllowOriginsFunc: func(origin string) bool {
-			return true
+			u, err := url.Parse(origin)
+			if err != nil {
+				return false
+			}
+			host := u.Hostname()
+			if host == "localhost" || host == "127.0.0.1" || host == "::1" {
+				return true
+			}
+			if ip := net.ParseIP(host); ip != nil && (ip.IsPrivate() || ip.IsLoopback()) {
+				return true
+			}
+			return false
 		},
 	}))
 

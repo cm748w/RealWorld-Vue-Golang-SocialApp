@@ -71,7 +71,7 @@ func CreatePost(c *fiber.Ctx) error {
 	post.CreatedAt = time.Now()
 	post.Title = SanitizeText(body.Title)
 	post.Message = SanitizeText(body.Message)
-	post.SelectedFile = body.SelectedFile
+	post.SelectedFile = SanitizeImageURL(body.SelectedFile)
 	//
 
 	var user models.UserModel
@@ -216,10 +216,10 @@ func UpdatePost(c *fiber.Ctx) error {
 		})
 	}
 
-	// 更新帖子字段（标题/内容做 XSS 消毒）
+	// 更新帖子字段（标题/内容做 XSS 消毒，配图做协议白名单校验）
 	authPost.Title = SanitizeText(newData.Title)
 	authPost.Message = SanitizeText(newData.Message)
-	authPost.SelectedFile = newData.SelectedFile
+	authPost.SelectedFile = SanitizeImageURL(newData.SelectedFile)
 	// 执行更新
 	_, err = PostSchema.UpdateOne(ctx, bson.M{"_id": authPost.ID}, bson.M{"$set": authPost})
 
@@ -476,6 +476,13 @@ func GetPostsUsersBySearch(c *fiber.Ctx) error {
 // @Router /posts/{id}/commentPost [post]
 func CommentPost(c *fiber.Ctx) error {
 
+	// 评论限流：每用户每分钟最多 10 次
+	if !commentLimiter.Allow(c.Locals("userId").(string)) {
+		return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+			"message": "Too many comments, please slow down",
+		})
+	}
+
 	var PostSchema = database.DB.Collection("posts")
 	var UserSchema = database.DB.Collection("users")
 	var NotificationSchema = database.DB.Collection("notifications")
@@ -565,6 +572,14 @@ func CommentPost(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Router /posts/{id}/likePost [patch]
 func LikePost(c *fiber.Ctx) error {
+
+	// 点赞限流：每用户每分钟最多 30 次
+	uidLocal, _ := c.Locals("userId").(string)
+	if !likeLimiter.Allow(uidLocal) {
+		return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+			"message": "Too many likes, please slow down",
+		})
+	}
 
 	// 获取所需的数据库集合
 	var PostSchema = database.DB.Collection("posts")                 // 帖子集合
