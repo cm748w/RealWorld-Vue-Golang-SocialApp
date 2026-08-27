@@ -4,7 +4,9 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"os"
 	"realTimeChat/realtime"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -33,6 +35,12 @@ func main() {
 			}
 			if ip := net.ParseIP(host); ip != nil && (ip.IsPrivate() || ip.IsLoopback()) {
 				return true
+			}
+			// 生产环境显式配置的允许来源（Docker 部署经反代同源访问，正常无需配置）
+			for _, o := range strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",") {
+				if o != "" && strings.TrimSpace(o) == origin {
+					return true
+				}
 			}
 			return false
 		},
