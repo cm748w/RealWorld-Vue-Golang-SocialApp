@@ -220,21 +220,12 @@ export default {
                 console.log("data on register", data)
 
                 if (data?.response?.data?.message) {
-                    let errorMessage = data.response.data.message;
-
-                    if (errorMessage.includes('already exists')) {
-                        this.$q.notify({
-                            icon: 'eva-alert-circle-outline',
-                            type: 'negative',
-                            message: `该邮箱已被注册，请使用其他邮箱或直接登录。`
-                        })
-                    } else {
-                        this.$q.notify({
-                            icon: 'eva-alert-circle-outline',
-                            type: 'negative',
-                            message: `错误：${errorMessage}`
-                        })
-                    }
+                    // 后端统一返回通用错误信息，不区分"邮箱已存在"，避免账号枚举
+                    this.$q.notify({
+                        icon: 'eva-alert-circle-outline',
+                        type: 'negative',
+                        message: `注册失败，请检查填写的信息后重试。`
+                    })
                 } else {
                     this.$q.notify({
                         icon: 'eva-alert-circle-outline',

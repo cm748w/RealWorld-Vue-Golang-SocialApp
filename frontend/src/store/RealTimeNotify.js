@@ -22,10 +22,13 @@ const RealTimeNotify = {
     actions: {
         async connectToNotify(context) {
             if (JSON.parse(localStorage.getItem('profile')) && context.state.ws == null) {
-                const Userid = JSON.parse(localStorage.getItem('profile')).result._id
+                const profile = JSON.parse(localStorage.getItem('profile'))
+                const Userid = profile.result._id
                 // 运行时根据当前页面地址动态拼接，nginx 将 /ws-notify/ 反代到通知服务 8088
                 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-                const ws = new WebSocket(`${wsProtocol}://${window.location.host}/ws-notify/${Userid}`)
+                // 携带 token 鉴权（服务端校验 iss 与路径 userId 一致）
+                const token = encodeURIComponent(profile.token || '')
+                const ws = new WebSocket(`${wsProtocol}://${window.location.host}/ws-notify/${Userid}?token=${token}`)
 
                 ws.onopen = () => {
                     context.commit('SET_WS', ws)

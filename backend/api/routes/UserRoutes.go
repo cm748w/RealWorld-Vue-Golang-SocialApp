@@ -10,8 +10,8 @@ import (
 )
 
 func SetupUserRoutes(app *fiber.App) {
-	// 根据 ID 获取用户信息
-	app.Get("/user/getUser/:id", controllers.GetUserByID)
+	// 根据 ID 获取用户信息（挂鉴权，防止匿名抓取任意用户资料与密码哈希）
+	app.Get("/user/getUser/:id", middleware.AuthMiddleware, controllers.GetUserByID)
 	// 获取推荐用户
 	app.Get("/user/getSug", middleware.AuthMiddleware, controllers.GetSugUser)
 	// 更新用户资料

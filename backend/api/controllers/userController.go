@@ -159,7 +159,7 @@ func GetUserByID(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"user":         user,
+		"user":         SanitizeUser(user),
 		"posts":        posts,
 		"totalPosts":   totalPosts,
 		"currentPage":  page,
@@ -208,7 +208,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	update := bson.M{"name": user.Name, "imageUrl": user.ImageUrl, "bio": user.Bio}
+	update := bson.M{"name": SanitizeText(user.Name), "imageUrl": user.ImageUrl, "bio": SanitizeText(user.Bio)}
 
 	result, err := UserSchema.UpdateOne(ctx, bson.M{"_id": userid}, bson.M{"$set": update})
 
@@ -233,7 +233,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": updateUser})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": SanitizeUser(updateUser)})
 
 }
 
@@ -381,7 +381,7 @@ func FollowingUser(c *fiber.Ctx) error {
 			"details": err.Error(),
 		})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"SecondUser": SecondUser, "FirstUser": FirstUser})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"SecondUser": SanitizeUser(SecondUser), "FirstUser": SanitizeUser(FirstUser)})
 
 }
 
@@ -521,6 +521,11 @@ func GetSugUser(c *fiber.Ctx) error {
 
 	if AllSugUsers == nil {
 		AllSugUsers = make([]models.UserModel, 0)
+	}
+
+	// 剔除密码哈希后再返回
+	for i := range AllSugUsers {
+		AllSugUsers[i] = SanitizeUser(AllSugUsers[i])
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"users": AllSugUsers})

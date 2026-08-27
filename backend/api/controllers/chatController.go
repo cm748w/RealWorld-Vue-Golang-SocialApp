@@ -72,9 +72,9 @@ func SendMessage(c *fiber.Ctx) error {
 		})
 	}
 
-	// 从 body 构造 msg
+	// 从 body 构造 msg（内容做 XSS 消毒）
 	msg := models.Message{
-		Content:  body.Content,
+		Content:  SanitizeText(body.Content),
 		Sender:   body.Sender,
 		Receiver: receiverID,
 	}

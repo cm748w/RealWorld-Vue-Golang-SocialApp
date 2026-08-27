@@ -33,6 +33,17 @@ func main() {
 
 	app.Get("/ws/:id", websocket.New(func(c *websocket.Conn) {
 		id := c.Params("id")
+
+		// 鉴权：必须携带有效 token 且 iss 与路径 id 一致，否则拒绝连接
+		token := c.Query("token")
+		issuer, ok := realtime.VerifyJWT(token)
+		if !ok || issuer != id {
+			log.Printf("WS auth rejected for user %s\n", id)
+			c.WriteMessage(websocket.CloseMessage, []byte("unauthorized"))
+			c.Close()
+			return
+		}
+
 		if manager == nil {
 			return
 		}
