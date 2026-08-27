@@ -310,7 +310,9 @@ export default {
 
 .q-header-app
    background: #fff
-   color: #0F172A
+   // !important：Quasar 的 marginal header 强制 color:#fff，
+   // 不加的话未选中的聊天/通知/主题切换图标会继承纯白（亮色下看不见）
+   color: #0F172A !important
 
 .q-drawer-app
    background: #fff
@@ -319,7 +321,7 @@ export default {
 body.body--dark
    .q-header-app
       background: #0F172A
-      color: #E2E8F0
+      color: #E2E8F0 !important
    .q-drawer-app
       background: #101828
       color: #E2E8F0
