@@ -69,13 +69,15 @@ export default {
         }
         this.NotifyList = await this.GetUnReadedNotifyNum(userId) || []
         console.log("notifilist", this.NotifyList)
-        setTimeout(() => {
-            this.NotifyList.forEach(async el =>{
-                if(!el.isRead){
-                    await this.MarkNotifyAsReaded(userId)
-                    el.isRead = true
-                }
-            })
+        setTimeout(async () => {
+            // 接口只接收 userId，之前的写法对每条未读都调一次，等于同一请求发 N 遍。
+            // 这里只调一次 mark-as-read，再把本地项标记为已读。
+            if (this.NotifyList.some(el => !el.isRead)) {
+                await this.MarkNotifyAsReaded(userId)
+                this.NotifyList.forEach(el => {
+                    if (!el.isRead) el.isRead = true
+                })
+            }
         }, 500)
     },
     computed:{
