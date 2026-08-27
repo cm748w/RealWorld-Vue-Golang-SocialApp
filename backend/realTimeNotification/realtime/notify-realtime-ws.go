@@ -42,6 +42,17 @@ func StartWebSocketServer(ws map[string]*websocket.Conn, wsMu *sync.Mutex) {
 
 	app.Get("/ws/:userId", websocket.New(func(c *websocket.Conn) {
 		userId := c.Params("userId")
+
+		// 鉴权：必须携带有效 token 且 iss 与路径 userId 一致，否则拒绝连接
+		token := c.Query("token")
+		issuer, ok := verifyJWT(token)
+		if !ok || issuer != userId {
+			log.Printf("WS auth rejected for user %s\n", userId)
+			c.WriteMessage(websocket.CloseMessage, []byte("unauthorized"))
+			c.Close()
+			return
+		}
+
 		fmt.Printf("User %s connected\n", userId)
 
 		// store the we conn
