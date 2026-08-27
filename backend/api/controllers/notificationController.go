@@ -32,8 +32,16 @@ func ReadNotification(c *fiber.Ctx) error {
 		})
 	}
 
+	// 身份校验：只能操作自己的通知
+	authID, ok := c.Locals("userId").(string)
+	if !ok || authID == "" || authID != userid {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "unauthenticates",
+		})
+	}
+
 	// 根据用户ID构建通知过滤条件，只处理该用户的通知
-	filter := bson.M{"mainUserId": bson.M{"$regex": userid, "$options": "i"}}
+	filter := bson.M{"mainUserId": userid}
 	// 将匹配到的通知统一标记为已读
 	update := bson.M{"$set": bson.M{"isRead": true}}
 
@@ -99,12 +107,20 @@ func GetUserNotification(c *fiber.Ctx) error {
 		})
 	}
 
+	// 身份校验：只能读取自己的通知
+	authID, ok := c.Locals("userId").(string)
+	if !ok || authID == "" || authID != userid {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "unauthenticates",
+		})
+	}
+
 	// 获取通知集合并设置查询超时时间
 	var NotificationSchema = database.DB.Collection("notifications")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	// 根据用户ID筛选该用户的所有通知
-	filter := bson.M{"mainUserId": bson.M{"$regex": userid, "$options": "i"}}
+	// 根据用户ID筛选该用户的所有通知（精确匹配）
+	filter := bson.M{"mainUserId": userid}
 	// 查询结果按创建时间倒序排列，方便前端直接展示最新通知
 	findOptions := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
 	// 执行查询

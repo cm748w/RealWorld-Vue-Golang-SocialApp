@@ -25,6 +25,13 @@ import (
 // @Failure 400 {object} map[string]interface{}
 // @Router /user/signup [post]
 func Register(c *fiber.Ctx) error {
+	// 注册限流：每 IP 每分钟最多 10 次（防垃圾账号灌水与邮箱枚举）
+	if !signupLimiter.Allow(c.IP()) {
+		return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+			"message": "Too many signup attempts, please try again later",
+		})
+	}
+
 	// 获取 users 集合并创建带超时的上下文，避免数据库操作长时间阻塞
 	var UserSchema = database.DB.Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -40,10 +47,11 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	// 根据邮箱检查用户是否已存在；仅当确认为“未找到文档”时才允许继续注册
+	// 返回统一错误信息，不区分“邮箱已存在”与其它失败，避免账号枚举
 	var existingUser models.UserModel
 	if err := UserSchema.FindOne(ctx, bson.D{{Key: "email", Value: body.Email}}).Decode(&existingUser); err == nil {
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"message": "user with email " + body.Email + " already exists",
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Registration failed, please try again",
 		})
 	} else if err != mongo.ErrNoDocuments {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -59,9 +67,9 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// 组装待写入的用户文档，初始化关注/粉丝列表
+	// 组装待写入的用户文档，初始化关注/粉丝列表（姓名做 XSS 消毒）
 	newUser := models.UserModel{
-		Name:      body.FirstName + " " + body.LastName,
+		Name:      SanitizeText(body.FirstName + " " + body.LastName),
 		Email:     body.Email,
 		Password:  string(hashPassword),
 		Followers: make([]string, 0),
@@ -97,9 +105,9 @@ func Register(c *fiber.Ctx) error {
 
 	token, _ := claims.SignedString([]byte(JwtSecret))
 
-	// 返回新注册用户信息和访问令牌
+	// 返回新注册用户信息和访问令牌（剔除密码哈希）
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"result": createdUser,
+		"result": SanitizeUser(*createdUser),
 		"token":  token,
 	})
 }
@@ -115,6 +123,13 @@ func Register(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{}
 // @Router /user/signin [post]
 func Login(c *fiber.Ctx) error {
+	// 登录限流：每 IP 每分钟最多 20 次尝试
+	if !loginIPLimiter.Allow(c.IP()) {
+		return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+			"message": "Too many login attempts, please try again later",
+		})
+	}
+
 	// 获取 users 集合并创建带超时的上下文，避免数据库操作长时间阻塞
 	var UserSchema = database.DB.Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -146,10 +161,18 @@ func Login(c *fiber.Ctx) error {
 	// 使用 bcrypt 对明文密码与数据库中的哈希密码进行比对
 	checkPass := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if checkPass != nil {
+		// 失败锁定：15 分钟内同一账号(+IP)失败 5 次后锁定 1 分钟
+		guardKey := user.Email + "|" + c.IP()
+		if !loginGuard.CheckAndRecord(guardKey) {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"message": "Too many failed attempts, account temporarily locked",
+			})
+		}
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "invalid email or password",
 		})
 	}
+	loginGuard.Reset(user.Email + "|" + c.IP())
 
 	// 登录成功后生成 JWT，Issuer 写入用户 ID，过期时间设置为 24 小时
 	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
@@ -162,9 +185,9 @@ func Login(c *fiber.Ctx) error {
 
 	token, _ := claims.SignedString([]byte(JwtSecret))
 
-	// 返回登录用户信息和访问令牌
+	// 返回登录用户信息和访问令牌（剔除密码哈希）
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"result": user,
+		"result": SanitizeUser(user),
 		"token":  token,
 	})
 }
