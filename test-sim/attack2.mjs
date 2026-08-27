@@ -50,7 +50,7 @@ await report('1.2 likePost rate-limited (30/min/user) — mass like spam blocked
     for (let i = 0; i < 32; i++) { const r = await req('PATCH', `posts/${p._id}/likePost`, { token: tB }); if (r.status === 429) { got429 = true; break }; if (r.status === 200) ok++ }
     await req('DELETE', `posts/${p._id}`, { token: tA })
     return got429 ? 'SAFE' : 'WARN'
-  })(), 'rapid likes -> 429 after 30')
+  })(), 'rapid likes -> 429 after 2 (2/min limit)')
 
 // 1.3 comment spam
 await report('1.3 No rate limit on commentPost — mass comment spam possible',
@@ -60,7 +60,7 @@ await report('1.3 No rate limit on commentPost — mass comment spam possible',
     for (let i = 0; i < 25; i++) { const r = await req('POST', `posts/${p._id}/commentPost`, { token: tB, body: { value: `spam${i}` } }); if (r.status === 200 || r.status === 201) ok++ }
     await req('DELETE', `posts/${p._id}`, { token: tA })
     return ok === 25 ? 'WARN' : 'SAFE'
-  })(), '25 rapid comments, all accepted')
+  })(), 'rapid comments -> 429 after 5 (5/min limit)')
 
 // 1.4 follow toggle spam
 await report('1.4 No rate limit on follow/unfollow toggle',
@@ -68,7 +68,7 @@ await report('1.4 No rate limit on follow/unfollow toggle',
     let ok = 0
     for (let i = 0; i < 20; i++) { const r = await req('PATCH', `user/${idC}/following`, { token: tB }); if (r.status === 200) ok++ }
     return ok === 20 ? 'WARN' : 'SAFE'
-  })(), '20 rapid follow/unfollow toggles, all accepted')
+  })(), 'rapid follow toggles -> 429 after 2 (2/min limit)')
 
 // 1.5 message spam
 await report('1.5 sendChatMessage rate-limited (20/min/user) — message flood blocked',
