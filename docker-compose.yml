@@ -39,6 +39,8 @@ services:
       - "8001:8001"
     environment:
       - GOLANG_API_SERVER_ADDR=${GOLANG_API_SERVER_ADDR}
+      # WS 鉴权需要与 API 一致的 JWT_SECRET（否则令牌校验 fail-closed，聊天实时推送全挂）
+      - JWT_SECRET=${JWT_SECRET}
       # 跨域白名单（可选，见 GolangApiServer 注释；同源访问无需配置）
       # - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
     networks:
@@ -62,6 +64,8 @@ services:
       - "8088:8088"
       - "8090:8090"
     environment:
+      # WS 鉴权需要与 API 一致的 JWT_SECRET（否则令牌校验 fail-closed，通知推送全挂）
+      - JWT_SECRET=${JWT_SECRET}
       # 跨域白名单（可选，见 GolangApiServer 注释；同源访问无需配置）
       # - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
     networks:
