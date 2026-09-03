@@ -45,11 +45,16 @@ func main() {
 	// 创建 Fiber 应用实例（自定义错误处理：对外返回通用信息，不泄露内部错误细节；
 	// 真实错误详情记录到服务端日志，便于排查）
 	app := fiber.New(fiber.Config{
+		// 请求体上限提到 10MB：前端允许 5MB 图片，base64 后约 6.7MB，留足余量
+		BodyLimit: 10 * 1024 * 1024,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			log.Printf("HTTP error on %s %s: %v", c.Method(), c.OriginalURL(), err)
 			code := fiber.StatusInternalServerError
 			if e, ok := err.(*fiber.Error); ok {
 				code = e.Code
+			} else if strings.Contains(strings.ToLower(err.Error()), "request entity too large") {
+				// 请求体超过 BodyLimit：返回 413，而不是笼统的 500
+				code = fiber.StatusRequestEntityTooLarge
 			}
 			return c.Status(code).JSON(fiber.Map{
 				"message": "internal server error",
