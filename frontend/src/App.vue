@@ -95,9 +95,14 @@ export default {
         this.$router.push('/Auth')
       }
 
-      // 如果从未登录变成已登录（登入成功）且当前在认证页，跳转到首页
+      // 如果从未登录变成已登录（登入成功）且当前在认证页，跳转到首页（或 redirect 目标）
       if (!this.wasAuthed && isNowAuthed && this.$route.path === '/Auth') {
-        this.$router.push('/')
+        const redirect = this.$route.query.redirect
+        this.$router.push(
+          typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')
+            ? redirect
+            : '/'
+        )
       }
 
       // 更新登录状态标记

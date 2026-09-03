@@ -148,7 +148,13 @@ export default {
                     })
                     this.connectToNotify()
                     this.createChatConnection()
-                    this.$router.push('/')
+                    // 有 redirect 参数就跳回原目标页，否则回首页
+                    const redirect = this.$route.query.redirect
+                    this.$router.push(
+                        typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')
+                            ? redirect
+                            : '/'
+                    )
                 }
             }
         },

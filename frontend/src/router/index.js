@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import store from '@/store'
 import HomeView from '@/views/HomeView.vue'
 import Auth from '@/views/Auth.vue'
 import ProfilePage from '@/views/Profile.vue'
@@ -51,6 +52,20 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
+})
+
+/**
+ * 全局登录守卫：未登录用户访问任何非 /Auth 页面，一律跳转 /Auth，
+ * 并携带 redirect 参数，登录成功后自动跳回原目标页。
+ */
+router.beforeEach((to) => {
+  store.commit('auth/SetData')
+
+  if (to.name !== 'Auth' && !store.state.auth.authData) {
+    return { name: 'Auth', query: { redirect: to.fullPath } }
+  }
+
+  return true
 })
 
 export default router
