@@ -92,7 +92,7 @@ import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex'
 import { debounce } from '@/utils/timing'
 
-const DEFAULT_AVATAR = 'https://cdn-icons-png.flaticon.com/512/1077/1077063.png';
+const DEFAULT_AVATAR = 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center';
 
 export default {
     name: 'PostComponent',
