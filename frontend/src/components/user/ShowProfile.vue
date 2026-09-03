@@ -81,10 +81,6 @@ export default {
         async checkUserFollowing() {
             this.syncFollowingState()
         },
-        created() {
-            // 防抖（leading 模式）：第一次点击立即生效，800ms 内的重复点击直接丢弃
-            this.debouncedFollow = debounce(this.FollowOrUnFollow, 800, { leading: true, trailing: false })
-        },
         async FollowOrUnFollow() {
             try {
                 const userId = this.userData?._id
@@ -96,7 +92,30 @@ export default {
                 const wasFollowing = this.isUserFollowing
                 const updatedUser = await this.FollowUser(userId)
 
-                this.Luserdata = { ...(updatedUser?.user || updatedUser || this.Luserdata) }
+                // users/FollowUser action 内部吞掉异常并把 Axios 错误对象原样返回，
+                // 这里必须区分成功/失败，不能把错误对象当成功结果扩散进 Luserdata。
+                if (!updatedUser || updatedUser.isAxiosError || updatedUser.response) {
+                    Notify.create({
+                        message: '操作失败，请重试',
+                        type: 'negative',
+                        timeout: 3000
+                    })
+                    return
+                }
+
+                const freshUser = updatedUser?.user || updatedUser
+                if (!freshUser?._id) {
+                    // 后端返回结构异常（拿不到最新用户），保守失败处理并回读当前状态
+                    this.syncFollowingState()
+                    Notify.create({
+                        message: '操作失败，请重试',
+                        type: 'negative',
+                        timeout: 3000
+                    })
+                    return
+                }
+
+                this.Luserdata = { ...freshUser }
                 this.syncFollowingState()
 
                 Notify.create({
@@ -116,6 +135,12 @@ export default {
         Edit() {
             this.$emit('EditProfile')
         }
+    },
+    created() {
+        // 注意：created 必须是组件选项的顶层生命周期钩子，不能放在 methods 里！
+        // 之前误写在 methods 内导致 Vue 永不调用它，debouncedFollow 一直是
+        // undefined，点击 Follow/Following 按钮毫无反应。
+        this.debouncedFollow = debounce(this.FollowOrUnFollow, 800, { leading: true, trailing: false })
     },
     mounted() {
         if (!this.isSameUser) {
