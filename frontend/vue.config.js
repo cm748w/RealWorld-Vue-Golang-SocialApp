@@ -1,5 +1,10 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
+  // 前端整体挂在 /app/ 基路径下：构建产物中的静态资源（js/css/图片等）都会带 /app 前缀，
+  // 同时 Vue CLI 会把 process.env.BASE_URL 置为 publicPath，Router 的 history base 自动变为 /app/，
+  // 页面路由（如 /app/Auth、/app/profile/:id）由外层网关统一反代到本服务。
+  // 注意：此改动不涉及 /api、/ws-* 等后端接口路径，它们仍保持站点根路径，由 nginx/网关反代。
+  publicPath: '/app/',
   transpileDependencies: [
     'quasar'
   ],

@@ -9,6 +9,14 @@ import PostDetails from '@/components/post/PostDetails.vue'
 import Search from '../components/search/Search.vue'
 import Notification from '../components/Notification/Notification.vue'
 import Chat from '../components/Chat/Chat.vue'
+
+// 应用基路径：Vue CLI 会在构建/运行时把 process.env.BASE_URL 替换为
+// vue.config.js 里 publicPath 的值（当前为 '/app/'），因此这里不需要硬编码。
+// history 使用该 base 后，路由会自动挂在 /app/ 之下，例如：
+//   - router.push('/Auth')            -> 浏览器地址栏 /app/Auth
+//   - 直接访问 /app/profile/:id       -> 正常解析为 profile 路由
+// 组件内所有路由跳转仍写相对 base 的路径（如 '/Auth'），不要手工加 '/app' 前缀。
+const routerBase = process.env.BASE_URL
 const routes = [
   {
     path: '/',
@@ -50,7 +58,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(routerBase),
   routes
 })
 
