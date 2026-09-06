@@ -15,5 +15,5 @@ RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list || true
 COPY frontend .
 RUN pnpm run build
 FROM nginx:1.27.4-alpine
-COPY --from=build /usr/src/app/dist /usr/share/nginx/html
+COPY --from=build /usr/src/app/dist /usr/share/nginx/html/app
 COPY frontend/.nginx/nginx.conf /etc/nginx/nginx.conf
