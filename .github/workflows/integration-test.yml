@@ -80,7 +80,8 @@ jobs:
                 echo "Waiting for frontend on port 8080.."
                 timeout 60 bash -c 'until nc -z localhost 8080; do echo "Waiting for forntend..."; sleep 2; done'
                 echo "forntend port is open , for testing http response..."
-                timeout 30 bash -c 'until curl -f http://localhost:8080 2>/dev/null; do echo "Waiting for http response .."; sleep 2; done'
+                # 前端以 /app 为基路径（publicPath），dev server 仅挂载在 /app 下，根路径返回 404
+                timeout 30 bash -c 'until curl -f http://localhost:8080/app/ 2>/dev/null; do echo "Waiting for http response .."; sleep 2; done'
                 echo "frontend application is ready!"
             working-directory: ./frontend
 
