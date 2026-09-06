@@ -1,6 +1,7 @@
 describe("Auth Component Tests", () => {
     beforeEach(() => {
-        cy.visit('/Auth')
+        // 应用以 /app 为基路径（vue.config.js publicPath），dev server 也挂载在 /app 下
+        cy.visit('/app/Auth')
     })
 
     
