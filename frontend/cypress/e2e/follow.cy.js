@@ -51,12 +51,12 @@ describe("Follow / Unfollow from another user's profile", () => {
             expect(actor, 'actor signed up').to.not.be.null;
             expect(target, 'target signed up').to.not.be.null;
 
-            // 进入 app 域后写入登录态，再访问他人主页
-            cy.visit('/Auth');
+            // 进入 app 域后写入登录态，再访问他人主页（应用基路径为 /app）
+            cy.visit('/app/Auth');
             cy.window().then((win) => {
                 win.localStorage.setItem('profile', JSON.stringify({ result: actor.result, token: actor.token }));
             });
-            cy.visit(`/profile/${target.result._id}`);
+            cy.visit(`/app/profile/${target.result._id}`);
         });
 
         // 页面渲染出 Follow 按钮（v-else-if 分支，非本人）
