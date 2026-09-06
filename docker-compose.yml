@@ -82,11 +82,12 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-    image: chenmonkey438/vue-app-fe
+    image: chenmonkey438/vue-app-fe:app-80-fixed
     container_name: VueServer
     restart: unless-stopped
-    # 服务器只开放 8080 端口 -> 宿主机 8080 映射到 nginx 容器内 80
+    # 阿里云安全组只放行 80 端口 -> 宿主机 80 映射到 nginx 容器内 80
     ports:
+      - "80:80"
       - "8080:80"
     networks:
       - app-network
