@@ -82,14 +82,13 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-    image: chenmonkey438/vue-app-fe:app-80-fixed
+    image: chenmonkey438/vue-app-fe:latest
     container_name: VueServer
     restart: unless-stopped
     # 对外同时保留 80 与 8080 两个入口，均映射到容器内 nginx 80：
     # - 80：公网直接访问 /app/（按需在安全组放行）
     # - 8080：香港网关经 WireGuard 访问 10.10.0.2:8080 反代到 CN
     ports:
-      - "80:80"
       - "80:80"
       - "8080:80"
     networks:
