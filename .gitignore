@@ -6,3 +6,4 @@
 **/*.log
 /docs/*.md
 backend/api/.env
+backend/api/Server.exe
