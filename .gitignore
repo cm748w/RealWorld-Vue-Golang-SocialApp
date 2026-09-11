@@ -1,11 +1,27 @@
+# 环境变量（可能含密钥），一律不入库；用 .env.example 提供模板
 /.env
-/frontend/dist
+**/.env
+**/.env.*
+!**/.env.example
+
+# 依赖与构建产物
 **/node_modules
 **/coverage
+**/dist
+
+# Go 编译产物 / 运行时临时文件
+**/*.exe
+**/*.dll
 **/tmp
 **/*.log
+
+# 测试产物（Cypress 截图/录像）
+**/cypress/screenshots
+**/cypress/videos
+
+# 文档
 /docs/*.md
-/backend/api/.env
-/backend/api/Server.exe
-/backend/api/tmp
-/backend/realTimeChat/tmp
+
+# 编辑器/系统文件
+.DS_Store
+Thumbs.db

@@ -22,3 +22,7 @@ pnpm-debug.log*
 # editor and OS files
 .DS_Store
 Thumbs.db
+
+# Cypress 产物
+cypress/screenshots/
+cypress/videos/
