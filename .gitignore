@@ -5,3 +5,4 @@
 **/tmp
 **/*.log
 /docs/*.md
+backend/api/.env
