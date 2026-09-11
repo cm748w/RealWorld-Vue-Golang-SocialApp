@@ -6,7 +6,10 @@
 **/tmp
 **/coverage
 **/*.log
+**/*.exe
+**/*.dll
 **/.env
-**/.env.test
+**/.env.*
+!**/.env.example
 frontend/cypress/screenshots
 frontend/cypress/videos
