@@ -5,7 +5,7 @@
 **/tmp
 **/*.log
 /docs/*.md
-backend/api/.env
-backend/api/Server.exe
-backend/api/tmp
-backend/realTimeChat/tmp
+/backend/api/.env
+/backend/api/Server.exe
+/backend/api/tmp
+/backend/realTimeChat/tmp
