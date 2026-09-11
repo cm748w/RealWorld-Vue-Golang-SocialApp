@@ -7,4 +7,5 @@
 /docs/*.md
 backend/api/.env
 backend/api/Server.exe
-backend/*/tmp
+backend/api/tmp
+backend/realTimeChat/tmp
