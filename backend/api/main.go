@@ -2,6 +2,7 @@ package main
 
 import (
 	"Server/database"
+	"Server/middleware"
 	"Server/routes"
 	"Server/servergrpc"
 	"log"
@@ -37,6 +38,12 @@ func main() {
 		log.Println("Warning: .env file not found, using environment variables")
 	}
 
+	// 启动即校验 JWT 密钥：缺失时直接退出，避免带着空密钥运行
+	// （空密钥会让 AuthMiddleware 的验签形同虚设，属于 fail-open）
+	if _, ok := middleware.JWTSecret(); !ok {
+		log.Fatal("JWT_SECRET is not configured; refusing to start")
+	}
+
 	// 连接到 MongoDB 数据库
 	if err := database.Connect(); err != nil {
 		log.Fatal("failed to connect to database:", err)
@@ -50,14 +57,22 @@ func main() {
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			log.Printf("HTTP error on %s %s: %v", c.Method(), c.OriginalURL(), err)
 			code := fiber.StatusInternalServerError
+			message := "internal server error"
 			if e, ok := err.(*fiber.Error); ok {
 				code = e.Code
+				// 4xx 是客户端问题，回显框架自带描述（如 "Not Found"），
+				// 否则 404 也会被写成 "internal server error"，误导调用方；
+				// 5xx 一律通用文案，不泄露内部细节
+				if code < 500 {
+					message = e.Message
+				}
 			} else if strings.Contains(strings.ToLower(err.Error()), "request entity too large") {
 				// 请求体超过 BodyLimit：返回 413，而不是笼统的 500
 				code = fiber.StatusRequestEntityTooLarge
+				message = "request entity too large"
 			}
 			return c.Status(code).JSON(fiber.Map{
-				"message": "internal server error",
+				"message": message,
 			})
 		},
 	})
@@ -91,6 +106,8 @@ func main() {
 	}))
 
 	// Setup Grpc Server
+	// #nosec G102 -- 必须监听所有网卡：容器间要经 compose 网络按服务名互访，
+	// 宿主端口未对外映射（已实测外部不可达）；改为 127.0.0.1 会使 gRPC 链路失效。
 	lis, err := net.Listen("tcp", ":5001")
 	if err != nil {
 		log.Fatalf("faild to listen : %v", err)
@@ -98,7 +115,12 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterRealtimeChatServiceServer(grpcServer, &servergrpc.Server{})
-	reflection.Register(grpcServer)
+	// gRPC 反射默认关闭：它会把完整的服务与方法清单暴露给能连通该端口的任何调用方。
+	// 本地调试需要时用 GRPC_REFLECTION=1 显式开启。
+	if os.Getenv("GRPC_REFLECTION") == "1" {
+		reflection.Register(grpcServer)
+		log.Println("gRPC reflection enabled (GRPC_REFLECTION=1)")
+	}
 	log.Println("gRPC Server Running on Port 5001")
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
@@ -126,5 +148,7 @@ func main() {
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// 启动服务器，监听 5000 端口
-	app.Listen(":5000")
+	if err := app.Listen(":5000"); err != nil {
+		log.Fatalf("failed to listen on :5000: %v", err)
+	}
 }

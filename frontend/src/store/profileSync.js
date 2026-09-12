@@ -1,3 +1,5 @@
+import { logWarn } from '@/utils/log.js'
+
 const SYNC_KEY = 'rw-socialapp-profile-sync'
 const CHANNEL_NAME = 'rw-socialapp-profile-sync-channel'
 
@@ -75,7 +77,7 @@ export function installProfileSync(store) {
         try {
             applyProfileSync(store, JSON.parse(event.newValue))
         } catch (error) {
-            console.error('Failed to apply profile sync from storage:', error)
+            logWarn('profileSync.storage', error)
         }
     })
 }
@@ -98,6 +100,6 @@ export function emitProfileSync(message) {
     try {
         localStorage.setItem(SYNC_KEY, JSON.stringify(envelope))
     } catch (error) {
-        console.error('Failed to emit profile sync:', error)
+        logWarn('profileSync.emit', error)
     }
 }

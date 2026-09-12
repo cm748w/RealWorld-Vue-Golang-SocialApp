@@ -8,35 +8,38 @@
             </div>
 
             <div class="row q-col-gutter-lg items-start justify-center">
-                <div class="col-12 col-md-6">
-                    <q-card class="my-card surface">
+                <!-- data-test 供 Cypress 用稳定选择器断言，避免依赖会随样式调整的 class -->
+                <div class="col-12 col-md-6" data-test="auth-signin-col">
+                    <q-card class="my-card surface" data-test="auth-signin-card">
                         <q-card-section>
                             <div class="section-title text-h6 q-mb-sm">Sign In</div>
                             <form @submit.prevent.stop="Login" class="q-gutter-md">
                                 <q-input filled v-model="Sin_data.email" label="邮箱 *" hint="请输入邮箱" :rules="emailRules"
-                                    lazy-rules />
+                                    lazy-rules data-test="auth-signin-email" />
                                 <q-input filled v-model="Sin_data.password" type="password" label="密码 *" hint="请输入密码"
-                                    :rules="passwordRules" lazy-rules />
-                                <q-btn label="Sign In" type="submit" color="primary" unelevated class="full-width q-py-sm q-mt-sm" />
+                                    :rules="passwordRules" lazy-rules data-test="auth-signin-password" />
+                                <q-btn label="Sign In" type="submit" color="primary" unelevated class="full-width q-py-sm q-mt-sm"
+                                    data-test="auth-signin-submit" />
                             </form>
                         </q-card-section>
                     </q-card>
                 </div>
 
-                <div class="col-12 col-md-6">
-                    <q-card class="my-card surface">
+                <div class="col-12 col-md-6" data-test="auth-signup-col">
+                    <q-card class="my-card surface" data-test="auth-signup-card">
                         <q-card-section>
                             <div class="section-title text-h6 q-mb-sm">Create Account</div>
                             <form @submit.prevent.stop="Register" class="q-gutter-md">
                                 <q-input filled v-model="Sup_data.firstName" label="名字 *" hint="请输入名字" :rules="nameRules"
-                                    lazy-rules />
+                                    lazy-rules data-test="auth-signup-firstname" />
                                 <q-input filled v-model="Sup_data.lastName" label="姓氏 *" hint="请输入姓氏" :rules="nameRules"
-                                    lazy-rules />
+                                    lazy-rules data-test="auth-signup-lastname" />
                                 <q-input filled v-model="Sup_data.email" label="邮箱 *" hint="请输入邮箱" :rules="emailRules"
-                                    lazy-rules />
+                                    lazy-rules data-test="auth-signup-email" />
                                 <q-input filled v-model="Sup_data.password" type="password" label="密码 *" hint="密码（至少6个字符）"
-                                    :rules="passwordRules" lazy-rules />
-                                <q-btn label="Sign Up" type="submit" color="positive" unelevated class="full-width q-py-sm q-mt-sm" />
+                                    :rules="passwordRules" lazy-rules data-test="auth-signup-password" />
+                                <q-btn label="Sign Up" type="submit" color="positive" unelevated class="full-width q-py-sm q-mt-sm"
+                                    data-test="auth-signup-submit" />
                             </form>
                         </q-card-section>
                     </q-card>
@@ -82,8 +85,6 @@ export default {
         ...mapActions("RealTimeNotify", ["connectToNotify"]),
         ...mapActions(['createChatConnection']),
         async Login() {
-            console.log("login in data", this.Sin_data)
-
             let validate = true;
 
             for (const rule of this.emailRules) {
@@ -116,8 +117,7 @@ export default {
 
             if (validate) {
                 var formdata = { email: this.Sin_data.email, password: this.Sin_data.password }
-                const data = await this.signin(formdata);
-                console.log("data response", data)
+                const data = await this.signin(formdata)
 
                 if (data?.response?.data?.message || data?.response?.data) {
                     let errorMessage = "登录失败";
@@ -159,8 +159,6 @@ export default {
             }
         },
         async Register() {
-            console.log("Register in data", this.Sup_data)
-
             let isValidate = true;
 
             for (const rule of this.nameRules) {
@@ -223,7 +221,6 @@ export default {
 
             if (isValidate) {
                 const data = await this.signup(this.Sup_data)
-                console.log("data on register", data)
 
                 if (data?.response?.data?.message) {
                     // 后端统一返回通用错误信息，不区分"邮箱已存在"，避免账号枚举

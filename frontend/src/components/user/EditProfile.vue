@@ -40,6 +40,7 @@
 <script>
 import { mapActions } from 'vuex'
 import { Notify } from 'quasar'
+import { logWarn } from '@/utils/log'
 
 const DEFAULT_AVATAR = 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center';
 
@@ -108,7 +109,7 @@ export default {
                     timeout: 3000
                 })
             } catch (error) {
-                console.error('Error saving profile:', error)
+                logWarn('EditProfile.Save', error)
                 Notify.create({
                     message: '保存失败，请重试',
                     type: 'negative',
