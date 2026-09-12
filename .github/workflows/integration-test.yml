@@ -46,6 +46,11 @@ jobs:
             env: 
                 MONGO_URI: mongodb://localhost:27017
                 PORT: 5000
+                # 后端签发/校验 JWT 必须要有 JWT_SECRET（backend/api/controllers/authController.go、
+                # middleware/authMiddleware.go 都从该环境变量取值；根 docker-compose.yml 里
+                # GolangApiServer 也要求传入）。缺失时注册/登录拿不到有效令牌，
+                # follow.cy.js 的 signup -> 关注 流程会直接失败。
+                JWT_SECRET: integration-test-jwt-secret
 
           # wait for backend to be ready
           - name: Wait For backend API
@@ -86,7 +91,8 @@ jobs:
             working-directory: ./frontend
 
           - name: Run Cypress Integration Tests
-            run: pnpm cy:run:auth
+            # 同时跑 auth.cy.js 与 follow.cy.js（后者此前从未被执行）
+            run: pnpm cy:run:all
             working-directory: ./frontend
             env:
                 CYPRESS_BASE_URL: http://localhost:8080

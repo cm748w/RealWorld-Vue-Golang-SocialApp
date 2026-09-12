@@ -56,7 +56,6 @@ export default {
     },
     watch: {
         "RealTimeNotify.notifyidData": async function (notify) {
-            console.log("noty", notify)
             this.NotifyList.unshift(notify)
         }
     },
@@ -68,7 +67,6 @@ export default {
             return
         }
         this.NotifyList = await this.GetUnReadedNotifyNum(userId) || []
-        console.log("notifilist", this.NotifyList)
         setTimeout(async () => {
             // 接口只接收 userId，之前的写法对每条未读都调一次，等于同一请求发 N 遍。
             // 这里只调一次 mark-as-read，再把本地项标记为已读。
@@ -88,7 +86,6 @@ export default {
         ...mapActions(['GetUnReadedNotifyNum', 'MarkNotifyAsReaded']),
 
         MoveToThePath(notify){
-            console.log(notify.details)
             if(String(notify?.details || '').includes("post")){
                 this.$router.push(`/PostDetails/${notify.targetId}`)
             } else {
