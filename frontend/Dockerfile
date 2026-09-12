@@ -1,26 +1,31 @@
-FROM node:24-bullseye-slim AS build
+# 构建阶段用 bookworm（Debian 12），而不是 bullseye（Debian 11）。
+#
+# 为什么：bullseye 已进入 EOL，其 security 仓库元数据不再刷新，Release 文件的
+# Valid-Until 永久过期 —— 实测在**官方源**上 `apt-get update` 同样以 exit 100 失败
+# （"Release file ... is expired"），换任何镜像站都一样。之前阿里云那次 .deb 404
+# 只是同一个病的二阶症状，锅不在阿里云。Debian 12 的安全仓库仍在正常更新：
+# 同一台机器、同一网络下实测 apt-get update 21s 通过。
+FROM node:24-bookworm-slim AS build
 WORKDIR /usr/src/app
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
-# Cypress 二进制从官方 CDN 下载很慢，改用 npmmirror 镜像加速
+# Cypress 二进制从官方 CDN 下载很慢，改用 npmmirror 加速（这是 npm 生态的镜像，
+# 与 apt 源无关，不会把"构建能否成功"绑在第三方镜像站的同步状态上）
 ENV CYPRESS_INSTALL_BINARY=https://registry.npmmirror.com/-/binary/cypress/15.14.1/linux-x64/cypress.zip
-# 这里**刻意不安装 apt 工具链**（python3 / build-essential / git）。
 #
-# 原因：原实现为「换阿里云源 + apt-get install 工具链」，而阿里云的 bullseye-security
-# 镜像同步不完整——元数据能取到，但大量 .deb 直接 404（实测报
-# "Failed to fetch ... 404 Not Found / Unable to fetch some archives"），
-# apt-get 以 exit 100 失败，导致整个前端镜像在本地和 CI 上都构建不出来。
-# 而实测确认：本项目的依赖树里没有任何包需要从源码编译（lockfile 中无 node-gyp /
-# requiresBuild 记录，sass 是纯 JS 的 dart-sass，Cypress 只下载预编译二进制），
-# 因此这套工具链纯属无用负担——它没帮上忙，却把构建绑死在第三方镜像站的健康状态上。
+# 这里**不换 apt 源、也不装 apt 工具链**。原实现是「无条件换阿里云源 + 装
+# python3/build-essential/git」，两个问题：
+#   1) 硬编码单一镜像源，构建成败被第三方镜像站的同步健康度绑架（阿里云那次同步不完整，
+#      .deb 直接 404，apt 以 exit 100 失败，前端镜像在本地和 CI 上都构建不出来）；
+#   2) 本项目没有任何依赖需要从源码编译（lockfile 无 node-gyp / requiresBuild，
+#      sass 是纯 JS 的 dart-sass，Cypress 只下预编译二进制），工具链纯属无用负担。
 #
-# 若将来引入需要 node-gyp 的依赖，再按下面方式补回（并保留回退逻辑，不要再写死单一镜像源）：
-#   RUN set -eu; cp /etc/apt/sources.list /tmp/orig.list; \
-#       sed -i 's|deb.debian.org|mirrors.aliyun.com|g;s|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list || true; \
-#       (apt-get update -o Acquire::Check-Valid-Until=false && \
-#        apt-get install -y --no-install-recommends python3 build-essential git ca-certificates) || \
-#       (cp /tmp/orig.list /etc/apt/sources.list && apt-get update && \
-#        apt-get install -y --no-install-recommends python3 build-essential git ca-certificates); \
-#       rm -rf /var/lib/apt/lists/*
+# 结论：直接用基镜像自带的官方源即可 —— 实测本机与 CI 都不需要任何代理
+# （deb.debian.org 国内直连 8 秒内可拉完全部 Packages 列表）。
+# 将来若确实要装编译工具链，请用官方源 + 由构建环境注入代理，不要写死镜像源：
+# Docker 有预定义代理参数，**不需要在 Dockerfile 里声明 ARG**，--build-arg 即可生效：
+#   docker build --build-arg HTTP_PROXY=http://host.docker.internal:7897 \
+#                --build-arg HTTPS_PROXY=http://host.docker.internal:7897 .
+# 或者一次性写进 ~/.docker/config.json 的 proxies.default（pull 与 build 都生效）。
 RUN npm install -g pnpm@11.7.0 --registry=https://registry.npmmirror.com/ && \
 	pnpm config set registry https://registry.npmmirror.com/ && \
 	pnpm install --frozen-lockfile
