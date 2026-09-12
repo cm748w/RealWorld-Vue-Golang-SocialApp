@@ -41,7 +41,9 @@ func setup() {
 
 	// Set jwt if not provided
 	if os.Getenv("JWT_SECRET") == "" {
-		os.Setenv("JWT_SECRET", "test-jwt-secret-key")
+		if err := os.Setenv("JWT_SECRET", "test-jwt-secret-key"); err != nil {
+			log.Fatalf("failed to set test JWT_SECRET: %v", err)
+		}
 	}
 
 	// Connect to test db

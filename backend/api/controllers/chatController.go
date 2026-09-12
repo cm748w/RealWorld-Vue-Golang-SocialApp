@@ -229,7 +229,7 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 			"error":   internalDetail(err),
 		})
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	// 遍历游标并组装结果数组
 	var messages []models.Message
@@ -308,7 +308,7 @@ func GetUserUnreadMsg(c *fiber.Ctx) error {
 			"error":   internalDetail(err),
 		})
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 	// 遍历游标并构建返回数组
 	var urms []models.UnreadMsg
 	totalUnreadMessageCount := 0

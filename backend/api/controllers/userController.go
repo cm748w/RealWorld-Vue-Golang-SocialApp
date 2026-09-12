@@ -136,7 +136,7 @@ func GetUserByID(c *fiber.Ctx) error {
 		})
 	}
 
-	defer postResult.Close(ctx)
+	defer func() { _ = postResult.Close(ctx) }()
 	for postResult.Next(ctx) {
 		var singlePost models.PostModel
 		if err := postResult.Decode(&singlePost); err != nil {
@@ -522,7 +522,7 @@ func GetSugUser(c *fiber.Ctx) error {
 			})
 		}
 
-		defer cursor.Close(ctx)
+		defer func() { _ = cursor.Close(ctx) }()
 
 		if err = cursor.All(ctx, &AllSugUsers); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

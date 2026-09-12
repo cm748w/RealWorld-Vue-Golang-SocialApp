@@ -334,7 +334,7 @@ func GetAllPosts(c *fiber.Ctx) error {
 		})
 	}
 
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 	for cursor.Next(ctx) {
 		var post models.PostModel
 		if err := cursor.Decode(&post); err != nil {
@@ -436,10 +436,10 @@ func GetPostsUsersBySearch(c *fiber.Ctx) error {
 	}
 	// 执行查询
 	cursorPosts, _ := PostSchema.Find(ctx, filterPost, findOptionsPost)
-	defer cursorPosts.Close(ctx)
+	defer func() { _ = cursorPosts.Close(ctx) }()
 
 	cursorUsers, _ := userSchema.Find(ctx, filterUser, findOptionsUser)
-	defer cursorUsers.Close(ctx)
+	defer func() { _ = cursorUsers.Close(ctx) }()
 	// 汇总结果
 
 	for cursorUsers.Next(ctx) {

@@ -77,7 +77,7 @@ func TestUserRegistration(t *testing.T) {
 
 			resp, err := app.Test(req, -1)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// check status code
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
@@ -180,7 +180,7 @@ func TestUserLogin(t *testing.T) {
 
 			resp, err := app.Test(req, -1)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			// check status code
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
@@ -224,7 +224,7 @@ func registerUser(t *testing.T, payload models.CreateUser, expectedStatus int) {
 
 	resp, err := app.Test(req, -1)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, expectedStatus, resp.StatusCode)
 }

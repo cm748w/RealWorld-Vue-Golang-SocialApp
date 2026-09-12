@@ -29,7 +29,7 @@ func statusOf(t *testing.T, app *fiber.App, authorization string) int {
 	if err != nil {
 		t.Fatalf("app.Test: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	return resp.StatusCode
 }
 
@@ -113,7 +113,7 @@ func TestAuthMiddlewareAcceptsValidToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("app.Test: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != fiber.StatusOK {
 		t.Fatalf("合法 token: 期望 200，实际 %d", resp.StatusCode)
 	}
@@ -130,7 +130,7 @@ func TestAuthMiddlewareAcceptsValidToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("app.Test: %v", err)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	if resp2.StatusCode != fiber.StatusOK {
 		t.Errorf("裸 token: 期望 200，实际 %d", resp2.StatusCode)
 	}

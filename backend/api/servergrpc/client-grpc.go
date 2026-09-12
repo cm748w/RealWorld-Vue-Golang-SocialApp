@@ -72,6 +72,7 @@ func SendNotification(notification models.Notification) error {
 		log.Printf("Failed to create grpc client %v", err)
 		return err
 	}
+	// Client.Close 自行记录关闭错误，无返回值
 	defer client.Close()
 
 	ctx := context.Background()

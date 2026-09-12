@@ -68,7 +68,7 @@ func ReadNotification(c *fiber.Ctx) error {
 		})
 	}
 
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	// 将查询结果反序列化到通知数组中
 	var notifications []models.Notification
@@ -132,7 +132,7 @@ func GetUserNotification(c *fiber.Ctx) error {
 		})
 	}
 
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	// 解析查询结果
 	var notifications []models.Notification
