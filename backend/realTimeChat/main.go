@@ -46,7 +46,7 @@ func main() {
 		},
 	}))
 
-	manager := realtime.NewConnectionManager(realtime.GetUserFriends)
+	hub := realtime.NewHub(realtime.GetUserFriends)
 	// register ws route
 	app.Get("/healthz", func(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusOK)
@@ -69,12 +69,12 @@ func main() {
 			return
 		}
 
-		if manager == nil {
+		if hub == nil {
 			return
 		}
-		manager.AddConnection(id, c)
+		hc := hub.AddConnection(id, c)
 		defer func() {
-			manager.RemoveConnection(id)
+			hub.RemoveConnection(id, hc)
 			if err := c.Close(); err != nil {
 				log.Printf("WS: close conn: %v", err)
 			}
@@ -85,15 +85,22 @@ func main() {
 			err := c.ReadJSON(&msg)
 			if err != nil {
 				handleWebSocketError(err, id)
-				manager.RemoveConnection(id)
+				hub.RemoveConnection(id, hc)
 				if err := c.Close(); err != nil {
 					log.Printf("WS: close conn after read error: %v", err)
 				}
 				break
 			}
 
+			// 发送者一律以已鉴权身份为准，绝不采信报文里的 sender：
+			// 否则任何登录用户都能把消息伪造成别人发的（已在审计中发现该伪造面）。
+			if msg.Sender != "" && msg.Sender != id {
+				log.Printf("WS: sender spoofing attempt: authenticated=%s claimed=%s", id, msg.Sender)
+			}
+			msg.Sender = id
+
 			log.Printf("Received message from %s to %s : %s", msg.Sender, msg.Receiver, msg.Content)
-			manager.SendToReceiver(msg)
+			hub.SendToReceiver(msg)
 		}
 	}))
 
