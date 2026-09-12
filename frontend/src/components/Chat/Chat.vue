@@ -92,6 +92,8 @@ export default {
             MainUserData: {},
             uniqueOnlineUsers: [],
             defaultAvatar: DEFAULT_AVATAR,
+            // 延时任务句柄：组件卸载时统一清理，避免定时器继续引用已销毁组件的 DOM
+            pendingTimers: [],
         }
     },
     computed: {
@@ -105,7 +107,6 @@ export default {
     watch: {
         "RealTimeChat.onlineFriends": function (online) {
             const onlineFriendsArray = Object.values(online || {})
-            console.log('Online friend changed new val', onlineFriendsArray)
             this.uniqueOnlineUsers = Array.from(new Set(onlineFriendsArray.map(u => String(u))))
             this.updateOnlineList()
         },
@@ -121,9 +122,7 @@ export default {
                         }
                     })
                     this.CallMarkMsgAsReaded(this.selectedUser, unreadSnapshot)
-                    setTimeout(() => {
-                        this.scrollDownFunction()
-                    }, 100)
+                    this.scheduleScroll()
                 } else {
                     this.contacts.forEach((contact) => {
                         if (contact._id == message.sender) {
@@ -146,6 +145,11 @@ export default {
         this.uniqueOnlineUsers = Array.from(new Set(Object.values(online).map(u => String(u))))
         this.updateOnlineList()
     },
+    beforeUnmount() {
+        // 清理所有延时任务：否则定时器会在组件销毁后继续跑，
+        // 去操作已经卸载的 this.$refs.messageContainer / this.contacts
+        this.clearPendingTimers()
+    },
     methods: {
         ...mapActions({
             GetUnreadedMessageNum: 'GetUnreadedMessageNum',
@@ -155,6 +159,25 @@ export default {
             FetchUserFollowersFollowing: ['users', 'FetchUserFollowersFollowing'],
         }),
         ...mapActions(['SendPrivateMessage']),
+        /** 统一的延时调度：句柄集中保存，便于 beforeUnmount 一次性清理 */
+        scheduleAfter(delay, fn) {
+            const id = setTimeout(() => {
+                this.pendingTimers = this.pendingTimers.filter(t => t !== id)
+                fn()
+            }, delay)
+            this.pendingTimers.push(id)
+            return id
+        },
+        /** 等 DOM 更新后把消息列表滚到底部 */
+        scheduleScroll() {
+            this.scheduleAfter(100, () => {
+                this.scrollDownFunction()
+            })
+        },
+        clearPendingTimers() {
+            this.pendingTimers.forEach((id) => clearTimeout(id))
+            this.pendingTimers = []
+        },
         updateOnlineList() {
             if (!Array.isArray(this.contacts)) return
             const onlineSet = new Set((this.uniqueOnlineUsers || []).map(u => String(u)))
@@ -204,7 +227,8 @@ export default {
                 otheruid,
                 GetunReadedmessage: unreadSnapshot,
             }
-            var { isMarked } = await this.MarkMsgsAsReaded(data)
+            // 这里再多一层兜底：即使 action 的返回契约被改回 undefined，也不会再抛 TypeError
+            var { isMarked } = (await this.MarkMsgsAsReaded(data)) || {}
 
             if (isMarked) {
                 this.contacts.forEach(user => {
@@ -283,11 +307,11 @@ export default {
                 }
             })
 
-            setTimeout(() => {
+            this.scheduleAfter(100, () => {
                 this.scrollDownFunction()
                 this.CallMarkMsgAsReaded(user, unreadSnapshot)
                 this.syncGlobalUnreadCount()
-            }, 100)
+            })
         },
         async handleSendMessage() {
             var content = this.messageToSend.text
@@ -305,18 +329,19 @@ export default {
                 if (savedMessage) {
                     this.messageBetweenUsers.push(savedMessage)
                     this.messageToSend.text = ''
-                    setTimeout(() => {
-                        this.scrollDownFunction()
-                    }, 100)
+                    this.scheduleScroll()
                 }
             } else {
                 const localMessage = { ...sdata, _id: `temp-${Date.now()}` }
                 this.messageBetweenUsers.push(localMessage)
                 this.messageToSend.text = ''
-                this.SendPrivateMessage(sdata)
-                setTimeout(() => {
-                    this.scrollDownFunction()
-                }, 100)
+                // 实时通道不可用（断线/未连上）时返回 false，此时回退到 REST 持久化，
+                // 否则消息会只出现在本机、静默丢失
+                const delivered = await this.SendPrivateMessage(sdata)
+                if (!delivered) {
+                    this.sendMessageAction(sdata)
+                }
+                this.scheduleScroll()
             }
 
         }

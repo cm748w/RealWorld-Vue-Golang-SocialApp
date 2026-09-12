@@ -6,18 +6,16 @@ import (
 	"log"
 	"net"
 	pb "realTimeNotification/protos"
-	"sync"
+	"realTimeNotification/realtime"
 	"time"
 
-	"github.com/gofiber/websocket/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type notificationServer struct {
 	pb.UnimplementedNotificationGrpcServiceServer
-	wsMu *sync.Mutex
-	ws   map[string]*websocket.Conn
+	hub *realtime.Hub
 }
 
 type Notification struct {
@@ -39,39 +37,38 @@ func (s *notificationServer) SendGrpcNotification(ctx context.Context, req *pb.N
 
 	fmt.Printf("Sending notification to user %s : %s\n", req.MainUserId, req.Details)
 
-	// send the nptification to websocket server
-	s.wsMu.Lock()
-	defer s.wsMu.Unlock()
+	notification := Notification{
+		ID:         req.XId,
+		MainUserId: req.MainUserId,
+		Details:    req.Details,
+		TargetId:   req.TargetId,
+		IsRead:     req.IsRead,
+		CreatedAt:  time.Unix(req.CreatedAt.Seconds, 0),
+		User: User{
+			Name:   req.User.Name,
+			Avatar: req.User.Avatar,
+		},
+	}
 
-	if conn, ok := s.ws[req.MainUserId]; ok {
-		notification := Notification{
-			ID:         req.XId,
-			MainUserId: req.MainUserId,
-			Details:    req.Details,
-			TargetId:   req.TargetId,
-			IsRead:     req.IsRead,
-			CreatedAt:  time.Unix(req.CreatedAt.Seconds, 0),
-			User: User{
-				Name:   req.User.Name,
-				Avatar: req.User.Avatar,
-			},
-		}
-		err := conn.WriteJSON(notification)
-		if err != nil {
-			log.Printf("Error sending notification to websocket server: %v", err)
-		}
+	// 交给 hub 下发：它只在该用户自己的连接锁上串行化写，并带写超时。
+	// 旧实现是「持全局锁 + 无超时写」，一个卡住的客户端会阻塞所有通知。
+	for _, err := range s.hub.Send(req.MainUserId, notification) {
+		log.Printf("Error sending notification to websocket server: %v", err)
 	}
 	return &emptypb.Empty{}, nil
 }
 
-func StartGRPCServer(ws map[string]*websocket.Conn, wsMu *sync.Mutex) error {
+// StartGRPCServer 监听 :8090 供 API 侧调用；收到的通知经 hub 推给对应用户。
+func StartGRPCServer(hub *realtime.Hub) error {
+	// #nosec G102 -- 必须监听所有网卡：API 容器要经 compose 网络按服务名访问本端口；
+	// 宿主端口未对外映射（已实测外部不可达）。改为 127.0.0.1 会切断通知链路。
 	lis, err := net.Listen("tcp", ":8090")
 	if err != nil {
-		return fmt.Errorf("Faild to listen on port 8090: %v", err)
+		return fmt.Errorf("failed to listen on port 8090: %v", err)
 	}
 
 	grpcServer := grpc.NewServer()
-	notificationService := &notificationServer{ws: ws, wsMu: wsMu}
+	notificationService := &notificationServer{hub: hub}
 
 	pb.RegisterNotificationGrpcServiceServer(grpcServer, notificationService)
 

@@ -90,8 +90,11 @@ export default {
     GetUserData(newVal) {
       const isNowAuthed = !!newVal
 
-      // 如果从已登录变成未登录（登出了），跳转到登录页
+      // 如果从已登录变成未登录（登出了），关闭实时连接并跳转到登录页
       if (this.wasAuthed && !isNowAuthed) {
+        // 先断连接：避免带着旧 token 的连接继续重连（心跳/退避定时器会一直跑）
+        this.StopConnectionToNotify()
+        this.StopConnectionToChat()
         this.$router.push('/Auth')
       }
 

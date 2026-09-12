@@ -27,7 +27,7 @@ func GetFollowingFollowersClient(id string) ([]*protos.UserIDsList, error) {
 		log.Fatalf("did not connected:%v", err)
 		return nil, err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	client := protos.NewRealtimeChatServiceClient(conn)
 	// call grpc method
@@ -52,7 +52,7 @@ func SendMessageClient(sender, receiver, content string) error {
 		log.Fatalf("did not connected:%v", err)
 		return err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	client := protos.NewRealtimeChatServiceClient(conn)
 	ctx := context.Background()
 

@@ -34,9 +34,23 @@ func Connect() error {
 	fmt.Println("Connected to MongoDB")
 	DB = Client.Database("social")
 
+	if err := EnsureIndexes(ctx, DB); err != nil {
+		fmt.Printf("warning: failed to ensure indexes: %v\n", err)
+	}
+
+	return nil
+}
+
+// EnsureIndexes creates every index the application relies on for correctness.
+//
+// It is exported (and idempotent) so that the test harness can call it too:
+// previously the tests connected to MongoDB directly and never created these
+// indexes, so the test database silently diverged from production and the
+// duplicate-key fallback path was never exercised.
+func EnsureIndexes(ctx context.Context, db *mongo.Database) error {
 	// Enforce one unread counter document per (receiver, sender) pair.
-	unreadCollection := DB.Collection("unreadmessages")
-	_, err = unreadCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
+	unreadCollection := db.Collection("unreadmessages")
+	_, err := unreadCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
 		Keys:    bson.D{{Key: "mainUserId", Value: 1}, {Key: "otherUserId", Value: 1}},
 		Options: options.Index().SetUnique(true).SetName("uniq_main_other_unread"),
 	})
@@ -45,7 +59,7 @@ func Connect() error {
 	}
 
 	// 唯一索引：邮箱不允许重复（堵住并发注册 TOCTOU 竞态）
-	usersCollection := DB.Collection("users")
+	usersCollection := db.Collection("users")
 	_, err = usersCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
 		Keys:    bson.D{{Key: "email", Value: 1}},
 		Options: options.Index().SetUnique(true).SetName("uniq_user_email"),

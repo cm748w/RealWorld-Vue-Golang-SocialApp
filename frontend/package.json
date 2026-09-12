@@ -6,7 +6,9 @@
     "serve": "vue-cli-service serve --port 8080",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "cy:run:auth": "cypress run --spec 'cypress/e2e/auth.cy.js'"
+    "cy:run:auth": "cypress run --spec 'cypress/e2e/auth.cy.js'",
+    "cy:run:follow": "cypress run --spec 'cypress/e2e/follow.cy.js'",
+    "cy:run:all": "cypress run --spec 'cypress/e2e/auth.cy.js,cypress/e2e/follow.cy.js'"
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",

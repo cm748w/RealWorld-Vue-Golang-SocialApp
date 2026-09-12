@@ -84,7 +84,6 @@ export default {
         ...mapActions(['getPostsUsersBySearch']),
         async GetData(){
             const AllData = await this.getPostsUsersBySearch(String(this.$route.query.search))
-            console.log("s", AllData)
             this.Users = AllData?.user || []
             this.Posts = AllData?.posts || []
         },

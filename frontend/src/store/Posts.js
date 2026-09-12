@@ -1,38 +1,17 @@
 import * as api from '../api/index.js'
+import { logWarn } from '@/utils/log.js'
 
 /**
  * 帖子管理模块
  * 负责处理社交应用中帖子的相关操作
  * 包括：获取、创建、更新、删除、点赞、评论和搜索等功能
+ *
+ * 失败返回契约（本模块统一）：
+ *  - 调用方需要区分成败的 action（createPost）→ 失败时 throw，让调用方感知；
+ *  - 其余 action → 失败时返回 null / false，调用方用可选链或布尔判断兜底。
  */
 const Posts = {
-    state: {isLoading: true, post:[], posts:[], SearchResult:[]},
-    getters: {
-        /**
-         * 获取单个帖子数据
-         * @param {Object} state - 状态对象
-         * @returns {Function} 返回帖子数据的函数
-         */
-        GetPost: (state) => {
-            return {...state.post}
-        },
-        /**
-         * 获取所有帖子数据
-         * @param {Object} state - 状态对象
-         * @returns {Function} 返回帖子列表数据的函数
-         */
-        GetAllPosts: (state) => {
-            return {...state.posts}
-        },
-        /**
-         * 获取搜索结果数据
-         * @param {Object} state - 状态对象
-         * @returns {Function} 返回搜索结果数据的函数
-         */
-        GetSearchData: (state) => {
-            return {...state.SearchResult}
-        },
-    },
+    state: {post:[], posts:[], SearchResult:[]},
     mutations: {
         /**
          * 更新单个帖子数据
@@ -66,7 +45,7 @@ const Posts = {
                 context.commit('Post', data)
                 return data
             }catch(error){
-                console.log(error)
+                logWarn('Posts.GetPost', error)
                 return null
             }
         },
@@ -82,22 +61,7 @@ const Posts = {
                 }
                 return null
             }catch(error){
-                console.log(error)
-                return null
-            }
-        },
-        async SearchPosts(context, page){
-            try{
-                const user = JSON.parse(localStorage.getItem('profile'))
-                const userId = user?.result?._id
-                if (userId){
-                    const {data} = await api.fetchPosts(userId, { page })
-                    context.commit('Posts', data)
-                    return data;
-                }
-                return null
-            }catch(error){
-                console.log(error)
+                logWarn('Posts.GetAllPosts', error)
                 return null
             }
         },
@@ -107,7 +71,7 @@ const Posts = {
                 context.commit('Search', data)
                 return data
             } catch (error) {
-                console.log(error)
+                logWarn('Posts.getPostsUsersBySearch', error)
                 return null
             }
         },
@@ -126,8 +90,7 @@ const Posts = {
                 context.commit('Post', data)
                 return data
             } catch (error) {
-                console.log('Create post error:', error)
-                console.log('Create post response:', error?.response?.data)
+                logWarn('Posts.createPost', error)
                 throw error
             }
         },
@@ -147,7 +110,7 @@ const Posts = {
                 context.commit('Post', post)
                 return post
             } catch (error) {
-                console.log(error)
+                logWarn('Posts.updatePost', error)
                 return null
             }
         },
@@ -155,10 +118,9 @@ const Posts = {
             try {
                 const {data} = await api.likePost(id)
                 context.commit('Post', data)
-                console.log('LikePost', data)
                 return data
             } catch (error) {
-                console.log(error)
+                logWarn('Posts.LikePostByUser', error)
                 return null
             }
         },
@@ -168,7 +130,7 @@ const Posts = {
                 context.commit('Post', data)
                 return data
             } catch (error) {
-                console.log(error)
+                logWarn('Posts.commentPost', error)
                 return null
             }
         },
@@ -177,7 +139,7 @@ const Posts = {
                 await api.deletePost(id)
                 return true
             } catch (error) {
-                console.log(error)
+                logWarn('Posts.deletePost', error)
                 return false
             }
         }

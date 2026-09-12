@@ -1,0 +1,30 @@
+# 统一换行符，避免同一份代码在不同平台上出现「整个文件都变了」的伪 diff。
+#
+# 背景：本仓库在 Windows 上以 core.autocrlf=true 检出时，Go 文件会全部变成 CRLF，
+# 导致 `gofmt -l` 把每个文件都报为未格式化（掩盖真实格式问题）、CI 与本地结果不一致。
+# Go 源码统一 LF；其余文本交给 git 自动判定。
+* text=auto eol=lf
+
+*.go text eol=lf
+*.proto text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.vue text eol=lf
+*.ts text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+
+# 二进制文件不要做任何换行转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.exe binary
+*.dll binary

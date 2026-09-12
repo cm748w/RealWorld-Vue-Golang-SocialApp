@@ -54,7 +54,7 @@ func ReadNotification(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to mark notification as readed",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 
@@ -64,18 +64,18 @@ func ReadNotification(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to retrieve updated notification",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	// 将查询结果反序列化到通知数组中
 	var notifications []models.Notification
 	if err := cursor.All(ctx, &notifications); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to decode notifications",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 
@@ -128,18 +128,18 @@ func GetUserNotification(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to retrieve updated notification",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	// 解析查询结果
 	var notifications []models.Notification
 	if err := cursor.All(ctx, &notifications); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to decode notifications",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 

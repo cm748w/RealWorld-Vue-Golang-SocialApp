@@ -10,32 +10,19 @@ import (
 	"time"
 )
 
-// jwtClaims 仅解析校验所需的字段（与 API 侧 dgrijalva/jwt-go StandardClaims 一致）
+// jwtClaims 仅解析校验所需的字段（对应 API 侧签发的 iss / exp）
 type jwtClaims struct {
 	Issuer    string `json:"iss"`
 	ExpiresAt int64  `json:"exp"`
 }
 
-// jwtSecret 从环境变量或 .env 文件读取 JWT 密钥（与 API 服务保持一致）
+// jwtSecret 只从环境变量读取 JWT 密钥。
+//
+// 旧实现会在 CWD 附近探测 ../api/.env、../../.env 等文件，理由是方便本地开发；
+// 但「密钥从哪来」因此不可预测，静态扫描（gosec G304）也无法确认访问边界。
+// 本地开发请显式提供环境变量（compose 已注入），缺失时 VerifyJWT 会 fail-closed。
 func jwtSecret() string {
-	if s := os.Getenv("JWT_SECRET"); s != "" {
-		return s
-	}
-	// 本地开发：API 的 .env 位于 backend/api/.env，按常见 CWD 探测
-	for _, p := range []string{"../api/.env", "../../.env", ".env", "../../api/.env"} {
-		data, err := os.ReadFile(p)
-		if err != nil {
-			continue
-		}
-		for _, line := range strings.Split(string(data), "\n") {
-			line = strings.TrimSpace(line)
-			if strings.HasPrefix(line, "JWT_SECRET=") {
-				v := strings.TrimPrefix(line, "JWT_SECRET=")
-				return strings.Trim(v, `"'`)
-			}
-		}
-	}
-	return ""
+	return os.Getenv("JWT_SECRET")
 }
 
 // VerifyJWT 校验 HS256 JWT，成功返回签发者（Issuer，即用户 ID）

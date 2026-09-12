@@ -11,6 +11,13 @@ jobs:
         uses: ./.github/workflows/backend-tests.yml
         secrets: inherit
 
+    # 静态检查（gofmt / go vet / golangci-lint / gosec）。
+    # 刻意不设为 deploy 的前置依赖：它应当大声失败让人看到，但不该让一次
+    # 风格问题阻断镜像发布。需要严格门禁时把 deploy-to-dockerhub 的 needs
+    # 里加上 backend-lint 即可。
+    backend-lint:
+        uses: ./.github/workflows/backend-lint.yml
+
     integration-frontend-tests:
         uses: ./.github/workflows/integration-test.yml
         needs: backend-tests

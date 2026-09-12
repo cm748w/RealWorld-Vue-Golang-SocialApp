@@ -3,6 +3,7 @@ import * as api from '../api/index.js';
 // 导入 JWT 解码库，用于验证 token 过期时间
 import { jwtDecode } from 'jwt-decode';
 import { emitProfileSync } from './profileSync.js';
+import { logWarn } from '@/utils/log.js';
 
 /**
  * 应用登出操作
@@ -139,8 +140,8 @@ const Auth = {
         // 返回登录响应数据
         return data;
       } catch (error) {
-        // 打印错误信息
-        console.log(error);
+        // 记录错误上下文（生产静默），并把错误对象交回调用方判断
+        logWarn('Auth.signin', error);
         // 返回错误对象
         return error;
       }
@@ -169,8 +170,8 @@ const Auth = {
         // 返回注册响应数据
         return data;
       } catch (error) {
-        // 打印错误信息
-        console.log(error);
+        // 记录错误上下文（生产静默），并把错误对象交回调用方判断
+        logWarn('Auth.signup', error);
         // 返回错误对象
         return error;
       }

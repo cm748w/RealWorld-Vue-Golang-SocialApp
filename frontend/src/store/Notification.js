@@ -1,5 +1,7 @@
 import * as api from '../api/index.js'
+import { logWarn } from '@/utils/log.js'
 
+// 失败返回契约（本模块统一）：调用方会判空兜底 → 失败返回 [] 或 null，绝不返回 undefined。
 const NotificationStore = {
 	state: {
 		unReadedNotification: 0
@@ -29,7 +31,9 @@ const NotificationStore = {
 
 				return data.notifications
 			} catch (error) {
-				console.log(error)
+				logWarn('Notification.GetUnReadedNotifyNum', error)
+				// 调用方按数组使用返回值（Notification.vue: `await ... || []`）
+				return []
 			}
 		},
 		async MarkNotifyAsReaded(context, id){
@@ -41,7 +45,8 @@ const NotificationStore = {
 				return data
 
 			} catch (error) {
-				console.log(error)
+				logWarn('Notification.MarkNotifyAsReaded', error)
+				return null
 			}
 		},
 	},

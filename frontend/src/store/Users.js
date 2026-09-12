@@ -1,6 +1,7 @@
 // 导入 API 模块，用于调用后端接口
 import * as api from '@/api/index.js'
 import { emitProfileSync } from './profileSync.js'
+import { logWarn } from '@/utils/log.js'
 
 // 关注列表缓存：避免每次进入 Chat 都把 followers+following 逐个重查（N+1）
 const FOLLOWERS_TTL = 30_000
@@ -127,7 +128,7 @@ const Users = {
                 commit('SetUser', normalized.user)
                 return normalized
             } catch (error) {
-                console.log(error)
+                logWarn('Users.GetUserById', error)
                 return error
             }
         },
@@ -172,7 +173,7 @@ const Users = {
                 
                 return normalized
             } catch (error) {
-                console.log(error)
+                logWarn('Users.UpdateUserData', error)
                 return error
             }
         },
@@ -225,7 +226,7 @@ const Users = {
 
                 return normalizedProfile
             } catch (error) {
-                console.log(error)
+                logWarn('Users.FollowUser', error)
                 return error
             }
         },
@@ -240,7 +241,7 @@ const Users = {
                 commit('SetRecommendedUsers', data)
                 return data
             } catch (error) {
-                console.log(error)
+                logWarn('Users.GetRecommendUsers', error)
                 return error
             }
         },
@@ -254,7 +255,7 @@ const Users = {
                 const localProfile = JSON.parse(localStorage.getItem('profile') || 'null')
                 const currentUserId = rootState?.auth?.authData?.result?._id || localProfile?.result?._id
                 if (!currentUserId) {
-                    console.error('User profile not found in localStorage')
+                    // 未登录（本地没有 profile）：直接返回空列表，属正常路径而非错误
                     return []
                 }
 
@@ -295,7 +296,8 @@ const Users = {
                         }
                         userdata.push(user)
                     } catch (error) {
-                        console.error(`Failed to fetch profile for user ${uid}:`, error)
+                        // 单个用户资料拉取失败不影响其余联系人，记录后继续
+                        logWarn('Users.FetchUserFollowersFollowing', `获取用户 ${uid} 资料失败`, error)
                     }
                 }
                 
@@ -303,7 +305,7 @@ const Users = {
                 commit('SetFollowersFetchedAt', Date.now())
                 return userdata
             } catch (error) {
-                console.error('Error fetching followers/following:', error)
+                logWarn('Users.FetchUserFollowersFollowing', error)
                 return []
             }
         }

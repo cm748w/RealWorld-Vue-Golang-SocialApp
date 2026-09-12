@@ -40,6 +40,9 @@ func TestUserRegistration(t *testing.T) {
 			expectedStatus: 400,
 		},
 		{
+			// 注册重复邮箱：为对抗邮箱枚举，接口返回统一的 400 与通用文案
+			// （不再回显 "already exists"，也不再是 409）。此断言必须与
+			// controllers.Register 的实际行为一致，否则 CI 会一直红。
 			name: "Duplicate Email Registration",
 			payload: models.CreateUser{
 				Email:     "duplicate@example.com",
@@ -47,8 +50,8 @@ func TestUserRegistration(t *testing.T) {
 				FirstName: "jane",
 				LastName:  "smith",
 			},
-			expectedStatus: 409,
-			shouldContain:  []string{" already exists"},
+			expectedStatus: 400,
+			shouldContain:  []string{"Registration failed"},
 		},
 	}
 
@@ -74,7 +77,7 @@ func TestUserRegistration(t *testing.T) {
 
 			resp, err := app.Test(req, -1)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// check status code
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
@@ -177,7 +180,7 @@ func TestUserLogin(t *testing.T) {
 
 			resp, err := app.Test(req, -1)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			// check status code
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
@@ -221,7 +224,7 @@ func registerUser(t *testing.T, payload models.CreateUser, expectedStatus int) {
 
 	resp, err := app.Test(req, -1)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, expectedStatus, resp.StatusCode)
 }

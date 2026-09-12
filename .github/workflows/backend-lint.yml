@@ -1,0 +1,103 @@
+name: "Backend Static Analysis"
+
+# 补上静态检查门禁。
+#
+# 背景：本仓库此前没有任何静态检查（既无 golangci-lint 也无 gosec），
+# 因此 errcheck 一类问题（未检查的 Decode/Close、静默丢弃的错误）长期无人拦截，
+# 依赖里的已停止维护库也没有告警。这里与 backend-tests.yml 分开成独立 workflow，
+# 便于随时单独重跑，也避免改动既有流水线结构。
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  gofmt-vet:
+    name: gofmt / go vet / go build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - backend/api
+          - backend/realTimeChat
+          - backend/realTimeNotification
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.1"
+          cache: false
+
+      - name: gofmt (must be clean)
+        working-directory: ./${{ matrix.module }}
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt found unformatted files:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        working-directory: ./${{ matrix.module }}
+        run: go vet ./...
+
+      - name: go build
+        working-directory: ./${{ matrix.module }}
+        run: go build ./...
+
+  golangci-lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - backend/api
+          - backend/realTimeChat
+          - backend/realTimeNotification
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.1"
+          cache: false
+
+      # 版本与本地一致，避免"本地干净、CI 报错"的版本漂移
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.13.2
+          working-directory: ${{ matrix.module }}
+          args: --no-config --timeout 6m
+
+  gosec:
+    name: gosec
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - backend/api
+          - backend/realTimeChat
+          - backend/realTimeNotification
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.1"
+          cache: false
+
+      - name: gosec
+        working-directory: ./${{ matrix.module }}
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+          gosec -exclude-dir=protos -exclude-dir=docs ./...

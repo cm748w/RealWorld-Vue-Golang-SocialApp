@@ -52,7 +52,6 @@ export default {
 		}
 	},
 	mounted() {
-		console.log("userid:", this.$route.params.id)
 		this.SetData()
 		this.GetAll()
 	},

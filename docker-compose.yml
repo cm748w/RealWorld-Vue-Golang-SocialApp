@@ -93,6 +93,14 @@ services:
       - "8080:80"
     networks:
       - app-network
+    # 镜像内已有 HEALTHCHECK（wget /healthz），这里显式声明，让 `docker compose ps`
+    # 与其他服务的 depends_on 复用同一判据。
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
     depends_on:
       GolangApiServer:
         condition: service_healthy

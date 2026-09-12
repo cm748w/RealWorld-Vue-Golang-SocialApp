@@ -249,7 +249,23 @@ GOLANG_NOTIFY_SERVICE_ADDR=localhost:8090
 
 ```dotenv
 GOLANG_API_SERVER_ADDR=localhost:5001
+JWT_SECRET=your-jwt-secret
 ```
+
+> [!IMPORTANT]
+> 实时聊天与实时通知两个服务**必须**能读到 `JWT_SECRET`，且必须与 API 的一致。
+> 两者在 WS 握手时会自行校验 JWT（HS256 + `iss` 必须等于路径里的用户 ID），
+> 密钥缺失或与 API 不一致时**一律拒绝连接**（fail-closed），现象是「实时功能连不上」。
+> Compose 部署时由根目录 `.env` 统一注入，无需单独配置。
+> 另外这两个服务**只从环境变量读取密钥**，不会再向上层目录探测 `.env` 文件。
+
+### 安全相关开关
+
+| 变量 | 作用 | 默认 |
+| --- | --- | --- |
+| `JWT_SECRET` | 签发/校验 JWT 的密钥。**API 启动时校验，缺失即退出**；实时服务缺失则拒绝所有 WS 连接 | 无（必填） |
+| `GRPC_REFLECTION` | 设为 `1` 才开启 gRPC 反射（会暴露完整服务/方法清单），默认关闭 | 关闭 |
+| `CORS_ALLOWED_ORIGINS` | 跨域白名单，逗号分隔；同源部署（nginx 反代）无需配置 | 空 |
 
 ### `frontend/.env`
 

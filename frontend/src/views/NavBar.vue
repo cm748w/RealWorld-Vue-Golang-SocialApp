@@ -246,7 +246,6 @@ export default {
          localStorage.setItem('dsh-dark', next ? '1' : '0')
       },
       GoSearch(e) {
-         console.log("go", e.target.value)
          this.$router.push({ path: `/Search`, query: { search: e.target.value } })
       },
       Profile() {
