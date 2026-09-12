@@ -3,12 +3,25 @@ WORKDIR /usr/src/app
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
 # Cypress 二进制从官方 CDN 下载很慢，改用 npmmirror 镜像加速
 ENV CYPRESS_INSTALL_BINARY=https://registry.npmmirror.com/-/binary/cypress/15.14.1/linux-x64/cypress.zip
-RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list || true && \
-	sed -i 's|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list || true && \
-	apt-get update && \
-	apt-get install -y --no-install-recommends python3 build-essential git ca-certificates && \
-	rm -rf /var/lib/apt/lists/* && \
-	npm install -g pnpm@11.7.0 --registry=https://registry.npmmirror.com/ && \
+# 这里**刻意不安装 apt 工具链**（python3 / build-essential / git）。
+#
+# 原因：原实现为「换阿里云源 + apt-get install 工具链」，而阿里云的 bullseye-security
+# 镜像同步不完整——元数据能取到，但大量 .deb 直接 404（实测报
+# "Failed to fetch ... 404 Not Found / Unable to fetch some archives"），
+# apt-get 以 exit 100 失败，导致整个前端镜像在本地和 CI 上都构建不出来。
+# 而实测确认：本项目的依赖树里没有任何包需要从源码编译（lockfile 中无 node-gyp /
+# requiresBuild 记录，sass 是纯 JS 的 dart-sass，Cypress 只下载预编译二进制），
+# 因此这套工具链纯属无用负担——它没帮上忙，却把构建绑死在第三方镜像站的健康状态上。
+#
+# 若将来引入需要 node-gyp 的依赖，再按下面方式补回（并保留回退逻辑，不要再写死单一镜像源）：
+#   RUN set -eu; cp /etc/apt/sources.list /tmp/orig.list; \
+#       sed -i 's|deb.debian.org|mirrors.aliyun.com|g;s|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list || true; \
+#       (apt-get update -o Acquire::Check-Valid-Until=false && \
+#        apt-get install -y --no-install-recommends python3 build-essential git ca-certificates) || \
+#       (cp /tmp/orig.list /etc/apt/sources.list && apt-get update && \
+#        apt-get install -y --no-install-recommends python3 build-essential git ca-certificates); \
+#       rm -rf /var/lib/apt/lists/*
+RUN npm install -g pnpm@11.7.0 --registry=https://registry.npmmirror.com/ && \
 	pnpm config set registry https://registry.npmmirror.com/ && \
 	pnpm install --frozen-lockfile
 
