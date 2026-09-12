@@ -21,7 +21,7 @@ jobs:
         # 先看 CI"失去意义——镜像已经被替换了。
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v7
             - name: docker login
               env:
                   DOCKER_USER: ${{ secrets.DOCKER_USER }}
