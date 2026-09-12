@@ -71,7 +71,7 @@ jobs:
 
       # 版本与本地一致，避免"本地干净、CI 报错"的版本漂移
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.13.2
           working-directory: ${{ matrix.module }}
