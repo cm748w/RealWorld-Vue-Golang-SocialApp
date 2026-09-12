@@ -14,7 +14,7 @@ RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list || true
 
 COPY frontend .
 RUN pnpm run build
-FROM nginx:1.27.4-alpine
+FROM nginx:1.31.5-alpine
 
 # ---------------------------------------------------------------------------
 #  运行时非 root 化
