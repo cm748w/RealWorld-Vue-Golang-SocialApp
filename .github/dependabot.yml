@@ -1,0 +1,70 @@
+version: 2
+
+# 依赖安全自动化。
+# 背景：本仓库此前既没开 Dependabot 也没开 CodeQL，
+# /backend/api 长期依赖已停止维护的 dgrijalva/jwt-go（CVE-2020-26160）
+# 却没有任何机制提醒。开启后每周检查一次，漏洞会直接进 PR/告警。
+updates:
+  # 三个独立 Go module 各自维护依赖，必须分别配置
+  - package-ecosystem: gomod
+    directory: /backend/api
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      go-dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: gomod
+    directory: /backend/realTimeChat
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      go-dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: gomod
+    directory: /backend/realTimeNotification
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      go-dependencies:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore(ci)"
+
+  - package-ecosystem: docker
+    directories:
+      - /backend/api
+      - /backend/realTimeChat
+      - /backend/realTimeNotification
+      - /frontend
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore(docker)"

@@ -13,6 +13,13 @@ jobs:
     deploy-to-dockerhub:
         name: deploy to docker hub
         runs-on: ubuntu-latest
+        # 只在 main 分支的 push 上发布镜像。
+        #
+        # 此前没有任何守卫，而 ci-cd.yml 在 pull_request 上也会调用本 workflow，
+        # 意味着**任何 PR 都能把未合并的代码推成 :latest**，直接覆盖生产正在使用的
+        # 镜像标签（compose 里正是用 :latest）。这既是供应链风险，也让"合并前
+        # 先看 CI"失去意义——镜像已经被替换了。
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         steps:
             - uses: actions/checkout@v5
             - name: docker login
@@ -21,22 +28,44 @@ jobs:
                   DOCKER_PAT: ${{ secrets.DOCKER_PAT }}
               run: echo "$DOCKER_PAT" | docker login -u "$DOCKER_USER" --password-stdin
 
+            # 除 :latest 外再推一个不可变的 :<sha> 标签：:latest 会被覆盖，
+            # 出问题时无法回滚到"上一版到底是哪个 commit"。
             - name: Build backend golang api
-              run: docker build . --file backend/api/Dockerfile --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_API:$DOCKER_TAG
+              run: |
+                docker build . --file backend/api/Dockerfile \
+                  --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_API:$DOCKER_TAG \
+                  --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_API:sha-${{ github.sha }}
             - name: Push backend api image to docker hub
-              run: docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_API:$DOCKER_TAG
+              run: |
+                docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_API:$DOCKER_TAG
+                docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_API:sha-${{ github.sha }}
 
             - name: Build backend golang realtime chat
-              run: docker build . --file backend/realTimeChat/Dockerfile --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_CHAT:$DOCKER_TAG
+              run: |
+                docker build . --file backend/realTimeChat/Dockerfile \
+                  --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_CHAT:$DOCKER_TAG \
+                  --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_CHAT:sha-${{ github.sha }}
             - name: Push realTimeChat image to docker hub
-              run: docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_CHAT:$DOCKER_TAG
+              run: |
+                docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_CHAT:$DOCKER_TAG
+                docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_CHAT:sha-${{ github.sha }}
 
             - name: Build backend golang realtime notification
-              run: docker build . --file backend/realTimeNotification/Dockerfile --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_NOTIFICATION:$DOCKER_TAG
+              run: |
+                docker build . --file backend/realTimeNotification/Dockerfile \
+                  --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_NOTIFICATION:$DOCKER_TAG \
+                  --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_NOTIFICATION:sha-${{ github.sha }}
             - name: Push realTimeNotification image to docker hub
-              run: docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_NOTIFICATION:$DOCKER_TAG
+              run: |
+                docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_NOTIFICATION:$DOCKER_TAG
+                docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_BACK_NOTIFICATION:sha-${{ github.sha }}
 
             - name: Build frontend vue
-              run: docker build . --file frontend/Dockerfile --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_FRONT:$DOCKER_TAG
+              run: |
+                docker build . --file frontend/Dockerfile \
+                  --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_FRONT:$DOCKER_TAG \
+                  --tag ${{secrets.DOCKER_USER}}/$DOCKER_REPO_FRONT:sha-${{ github.sha }}
             - name: Push frontend vue image to docker hub
-              run: docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_FRONT:$DOCKER_TAG
+              run: |
+                docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_FRONT:$DOCKER_TAG
+                docker push ${{secrets.DOCKER_USER}}/$DOCKER_REPO_FRONT:sha-${{ github.sha }}

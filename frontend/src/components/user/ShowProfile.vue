@@ -39,6 +39,7 @@
 import { mapActions } from 'vuex'
 import { Notify } from 'quasar'
 import { debounce } from '@/utils/timing'
+import { logWarn } from '@/utils/log'
 
 const DEFAULT_AVATAR = 'https://game-1255653016.file.myqcloud.com/manage/compress/custom_wzry_E1/312ff4442ddbe69154045e33b604ef56.jpg?imageMogr2/crop/512x512/gravity/center';
 
@@ -85,7 +86,7 @@ export default {
             try {
                 const userId = this.userData?._id
                 if (!userId) {
-                    console.log('No userId available')
+                    // 没有 userId 说明数据还没加载完，直接返回，不触发关注请求
                     return
                 }
 
@@ -124,7 +125,7 @@ export default {
                     timeout: 3000
                 })
             } catch (error) {
-                console.error('Error following/unfollowing user:', error)
+                logWarn('ShowProfile.FollowOrUnFollow', error)
                 Notify.create({
                     message: '操作失败，请重试',
                     type: 'negative',
