@@ -67,6 +67,7 @@ import Add from '@/components/post/Add.vue'
 import Post from '@/components/post/Post.vue'
 import SideBar from '@/components/sideBar/SideBar.vue'
 import Rightbar from '@/components/rightbar/Rightbar.vue'
+import { logWarn } from '@/utils/log'
 import { mapActions } from 'vuex'
 export default {
 	name: 'HomeView',
@@ -98,10 +99,8 @@ export default {
 		async GetAllPosts(append = false) {
 			try {
 				const data = await this.getPosts(this.current)
-				console.log("post data", data)
 				if (data?.data) {
 					this.max = data?.numberOfPages
-					console.log("Is append", append)
 					if (append) {
 						this.posts = [...this.posts, ...data.data]
 					} else {
@@ -115,7 +114,7 @@ export default {
 					this.load = true
 				}
 			} catch (error) {
-				console.error("Error loading posts", error)
+				logWarn('HomeView.GetAllPosts', error)
 			}
 		},
 		async onLoad(index, done) {
@@ -130,7 +129,7 @@ export default {
 				}
 				done(this.hasReachedEnd)
 			} catch (error) {
-				console.error('error loading more posts', error)
+				logWarn('HomeView.onLoad', error)
 				done(true)
 			}
 		},
