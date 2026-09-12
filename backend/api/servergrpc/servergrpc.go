@@ -84,7 +84,7 @@ func (s *Server) SendMessage(ctx context.Context, req *pb.MessageRequest) (*pb.M
 
 	_, err = database.DB.Collection("messages").InsertOne(ctx, message)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to save message to db")
+		return nil, fmt.Errorf("failed to save message to db")
 	}
 
 	// update unreaded messages (atomic upsert)
@@ -97,10 +97,10 @@ func (s *Server) SendMessage(ctx context.Context, req *pb.MessageRequest) (*pb.M
 		if mongo.IsDuplicateKeyError(err) {
 			_, retryErr := unreadedmessagesSchema.UpdateOne(ctx, filter, update)
 			if retryErr != nil {
-				return nil, fmt.Errorf("Failed to update unreaded messages: %v", retryErr)
+				return nil, fmt.Errorf("failed to update unreaded messages: %v", retryErr)
 			}
 		} else {
-			return nil, fmt.Errorf("Failed to update unreaded messages: %v", err)
+			return nil, fmt.Errorf("failed to update unreaded messages: %v", err)
 		}
 	}
 

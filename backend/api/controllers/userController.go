@@ -5,6 +5,7 @@ import (
 	"Server/models"
 	"Server/servergrpc"
 	"context"
+	"log"
 	"slices"
 	"strconv"
 	"sync"
@@ -104,7 +105,7 @@ func GetUserByID(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "failed to load user",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -131,7 +132,7 @@ func GetUserByID(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed to fetch posts",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -142,7 +143,7 @@ func GetUserByID(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"success": false,
 				"message": "Failed to decode post",
-				"details": err.Error(),
+				"details": internalDetail(err),
 			})
 		}
 		posts = append(posts, singlePost)
@@ -204,7 +205,7 @@ func UpdateUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(&user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid request body",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -215,7 +216,7 @@ func UpdateUser(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   "cannot update the user data",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 	//
@@ -224,7 +225,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		err := UserSchema.FindOne(ctx, bson.M{"_id": userid}).Decode(&updateUser)
 		if err != nil {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"details": err.Error(),
+				"details": internalDetail(err),
 			})
 		}
 	} else {
@@ -303,7 +304,7 @@ func FollowingUser(c *fiber.Ctx) error {
 		}
 
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -317,7 +318,7 @@ func FollowingUser(c *fiber.Ctx) error {
 		}
 
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -347,14 +348,17 @@ func FollowingUser(c *fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Failed to create notification",
-				"error":   err.Error(),
+				"error":   internalDetail(err),
 			})
 		}
 
 		// set the id failed of the notification object
 		notification.ID = res.InsertedID.(primitive.ObjectID)
 		// call grpc
-		servergrpc.SendNotification(notification)
+		if err := servergrpc.SendNotification(notification); err != nil {
+			// 推送失败不影响关注流程本身，但必须留痕
+			log.Printf("send notification (follow): %v", err)
+		}
 	}
 
 	updateFirst := bson.M{"followers": FirstUser.Followers}
@@ -363,7 +367,7 @@ func FollowingUser(c *fiber.Ctx) error {
 	_, err = UserSchema.UpdateOne(ctx, bson.M{"_id": FirstUserID}, bson.M{"$set": updateFirst})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -371,14 +375,14 @@ func FollowingUser(c *fiber.Ctx) error {
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
 	err = UserSchema.FindOne(ctx, bson.M{"_id": FirstUserID}).Decode(&FirstUser)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -386,7 +390,7 @@ func FollowingUser(c *fiber.Ctx) error {
 
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"SecondUser": SanitizeUser(SecondUser), "FirstUser": SanitizeUser(FirstUser)})
@@ -425,7 +429,7 @@ func GetSugUser(c *fiber.Ctx) error {
 	MainUserID, err := primitive.ObjectIDFromHex(mainUserHex)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -438,7 +442,7 @@ func GetSugUser(c *fiber.Ctx) error {
 		}
 
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -466,7 +470,7 @@ func GetSugUser(c *fiber.Ctx) error {
 			}
 
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"details": err.Error(),
+				"details": internalDetail(err),
 			})
 		}
 
@@ -514,7 +518,7 @@ func GetSugUser(c *fiber.Ctx) error {
 		})
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"details": err.Error(),
+				"details": internalDetail(err),
 			})
 		}
 
@@ -522,7 +526,7 @@ func GetSugUser(c *fiber.Ctx) error {
 
 		if err = cursor.All(ctx, &AllSugUsers); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"details": err.Error(),
+				"details": internalDetail(err),
 			})
 		}
 	}
@@ -578,7 +582,7 @@ func DeleteUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "failed to delete user",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 

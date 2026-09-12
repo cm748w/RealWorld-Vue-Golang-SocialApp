@@ -40,6 +40,9 @@ func TestUserRegistration(t *testing.T) {
 			expectedStatus: 400,
 		},
 		{
+			// 注册重复邮箱：为对抗邮箱枚举，接口返回统一的 400 与通用文案
+			// （不再回显 "already exists"，也不再是 409）。此断言必须与
+			// controllers.Register 的实际行为一致，否则 CI 会一直红。
 			name: "Duplicate Email Registration",
 			payload: models.CreateUser{
 				Email:     "duplicate@example.com",
@@ -47,8 +50,8 @@ func TestUserRegistration(t *testing.T) {
 				FirstName: "jane",
 				LastName:  "smith",
 			},
-			expectedStatus: 409,
-			shouldContain:  []string{" already exists"},
+			expectedStatus: 400,
+			shouldContain:  []string{"Registration failed"},
 		},
 	}
 

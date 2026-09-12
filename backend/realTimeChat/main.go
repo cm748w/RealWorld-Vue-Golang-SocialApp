@@ -60,8 +60,12 @@ func main() {
 		issuer, ok := realtime.VerifyJWT(token)
 		if !ok || issuer != id {
 			log.Printf("WS auth rejected for user %s\n", id)
-			c.WriteMessage(websocket.CloseMessage, []byte("unauthorized"))
-			c.Close()
+			if err := c.WriteMessage(websocket.CloseMessage, []byte("unauthorized")); err != nil {
+				log.Printf("WS: write close message: %v", err)
+			}
+			if err := c.Close(); err != nil {
+				log.Printf("WS: close rejected conn: %v", err)
+			}
 			return
 		}
 
@@ -71,7 +75,9 @@ func main() {
 		manager.AddConnection(id, c)
 		defer func() {
 			manager.RemoveConnection(id)
-			c.Close()
+			if err := c.Close(); err != nil {
+				log.Printf("WS: close conn: %v", err)
+			}
 		}()
 
 		var msg realtime.Message
@@ -80,17 +86,20 @@ func main() {
 			if err != nil {
 				handleWebSocketError(err, id)
 				manager.RemoveConnection(id)
-				c.Close()
+				if err := c.Close(); err != nil {
+					log.Printf("WS: close conn after read error: %v", err)
+				}
 				break
 			}
 
 			log.Printf("Received message from %s to %s : %s", msg.Sender, msg.Receiver, msg.Content)
 			manager.SendToReceiver(msg)
 		}
-
 	}))
 
-	log.Fatal(app.Listen(":8001"))
+	if err := app.Listen(":8001"); err != nil {
+		log.Fatalf("failed to listen on :8001: %v", err)
+	}
 }
 
 func handleWebSocketError(err error, userID string) {

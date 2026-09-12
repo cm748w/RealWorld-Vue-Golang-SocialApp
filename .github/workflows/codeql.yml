@@ -1,0 +1,64 @@
+name: "CodeQL"
+
+# 静态代码扫描。此前仓库完全没有 CodeQL（API 返回 "no analysis found"）。
+# Go 部分必须手动指定构建命令：三个 module 分别在子目录下，CodeQL 的
+# autobuild 在仓库根目录找不到 go.mod，会直接判定失败。
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "23 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: go
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.1"
+          cache: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Build Go services
+        if: matrix.language == 'go'
+        run: |
+          for module in backend/api backend/realTimeChat backend/realTimeNotification; do
+            echo "==> building $module"
+            (cd "$module" && go build ./...)
+          done
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

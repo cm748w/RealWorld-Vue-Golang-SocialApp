@@ -80,6 +80,12 @@ func connectTestDB() {
 	}
 	database.Client = client
 	database.DB = client.Database("social_test")
+
+	// 与生产保持一致：唯一索引必须在测试库里也存在，否则「并发注册同邮箱被
+	// 唯一索引兜底」这条分支永远测不到（历史上测试库因此与生产结构不一致）。
+	if err := database.EnsureIndexes(ctx, database.DB); err != nil {
+		log.Fatal("Failed to create indexes on test db:", err)
+	}
 }
 
 func cleanup() {
@@ -88,8 +94,12 @@ func cleanup() {
 		defer cancel()
 
 		// drop test db
-		database.DB.Drop(ctx)
-		database.Client.Disconnect(ctx)
+		if err := database.DB.Drop(ctx); err != nil {
+			log.Printf("cleanup: drop test db: %v", err)
+		}
+		if err := database.Client.Disconnect(ctx); err != nil {
+			log.Printf("cleanup: disconnect: %v", err)
+		}
 	}
 }
 
@@ -100,6 +110,8 @@ func cleanupCollections() {
 
 	collections := []string{"users"}
 	for _, collection := range collections {
-		database.DB.Collection(collection).Drop(ctx)
+		if err := database.DB.Collection(collection).Drop(ctx); err != nil {
+			log.Printf("cleanup: drop %s: %v", collection, err)
+		}
 	}
 }

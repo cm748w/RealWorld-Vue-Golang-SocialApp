@@ -5,6 +5,7 @@ import (
 	"Server/models"
 	"Server/servergrpc"
 	"context"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -59,7 +60,7 @@ func CreatePost(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid request body",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -84,7 +85,7 @@ func CreatePost(c *fiber.Ctx) error {
 	err = UserSchema.FindOne(ctx, bson.M{"_id": objId}).Decode(&user)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": err.Error(),
+			"error": internalDetail(err),
 		})
 	}
 	//
@@ -94,7 +95,10 @@ func CreatePost(c *fiber.Ctx) error {
 	result, err := PostSchema.InsertOne(ctx, &post)
 
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(err)
+		// 不要把驱动原始错误直接当成响应体返回
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "failed to create post",
+		})
 	} else {
 		var createdPost *models.PostModel
 		query := bson.M{"_id": result.InsertedID}
@@ -135,7 +139,7 @@ func GetPost(c *fiber.Ctx) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
+			"error": internalDetail(err),
 		})
 	}
 	var post *models.PostModel
@@ -147,14 +151,14 @@ func GetPost(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"success": false,
 				"message": "post Not Found",
-				"error":   err.Error(),
+				"error":   internalDetail(err),
 			})
 		}
 
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"success": false,
 			"message": "post Not Found",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 
@@ -187,7 +191,7 @@ func UpdatePost(c *fiber.Ctx) error {
 	if err := c.BodyParser(&newData); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid request body",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 	// 权限校验开始
@@ -195,7 +199,7 @@ func UpdatePost(c *fiber.Ctx) error {
 	primID, err := primitive.ObjectIDFromHex(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
+			"error": internalDetail(err),
 		})
 	}
 	if err := PostSchema.FindOne(ctx, bson.M{"_id": primID}).Decode(&authPost); err != nil {
@@ -224,7 +228,7 @@ func UpdatePost(c *fiber.Ctx) error {
 	_, err = PostSchema.UpdateOne(ctx, bson.M{"_id": authPost.ID}, bson.M{"$set": authPost})
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"data": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"data": internalDetail(err)})
 	} else {
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{"post": authPost})
 	}
@@ -440,15 +444,21 @@ func GetPostsUsersBySearch(c *fiber.Ctx) error {
 
 	for cursorUsers.Next(ctx) {
 		var user models.UserModel
-		cursorUsers.Decode(&user)
+		if err := cursorUsers.Decode(&user); err != nil {
+			// 单条解码失败不应让整个搜索失败：记录并跳过
+			log.Printf("search: decode user: %v", err)
+			continue
+		}
 		users = append(users, user)
 	}
 
 	for cursorPosts.Next(ctx) {
 		var post models.PostModel
-		cursorPosts.Decode(&post)
+		if err := cursorPosts.Decode(&post); err != nil {
+			log.Printf("search: decode post: %v", err)
+			continue
+		}
 		posts = append(posts, post)
-
 	}
 
 	// 剔除密码哈希后再返回搜索结果
@@ -494,14 +504,14 @@ func CommentPost(c *fiber.Ctx) error {
 	if err := c.BodyParser(&b); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid request body",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
 	postid, err := primitive.ObjectIDFromHex(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -514,7 +524,7 @@ func CommentPost(c *fiber.Ctx) error {
 	).Decode(&post)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 	// TODO: 创建评论通知
@@ -530,7 +540,12 @@ func CommentPost(c *fiber.Ctx) error {
 		})
 	}
 
-	userResult.Decode(&user)
+	if err := userResult.Decode(&user); err != nil {
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"success": false,
+			"message": "User not found",
+		})
+	}
 
 	notification := models.Notification{
 		MainUserID: post.Creator,
@@ -543,14 +558,17 @@ func CommentPost(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to create notification",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 	// end
 	// set the id failed of the notification object
 	notification.ID = res.InsertedID.(primitive.ObjectID)
 	// call grpc
-	servergrpc.SendNotification(notification)
+	if err := servergrpc.SendNotification(notification); err != nil {
+		// 推送失败不影响主流程（评论已落库），但必须留痕而不是静默丢弃
+		log.Printf("send notification (comment): %v", err)
+	}
 	// end call grpc
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"data": post,
@@ -648,7 +666,7 @@ func LikePost(c *fiber.Ctx) error {
 		}
 		// 其他错误，返回500内部服务器错误
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -669,7 +687,12 @@ func LikePost(c *fiber.Ctx) error {
 		}
 
 		// 解码用户信息
-		userResult.Decode(&user)
+		if err := userResult.Decode(&user); err != nil {
+			return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+				"success": false,
+				"message": "User not found",
+			})
+		}
 
 		// 创建通知对象
 		notification := models.Notification{
@@ -686,14 +709,16 @@ func LikePost(c *fiber.Ctx) error {
 			// 如果创建通知失败，返回500错误
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Failed to create notification",
-				"details": err.Error(),
+				"details": internalDetail(err),
 			})
 		}
 
 		// set the id failed of the notification object
 		notification.ID = res.InsertedID.(primitive.ObjectID)
 		// call grpc
-		servergrpc.SendNotification(notification)
+		if err := servergrpc.SendNotification(notification); err != nil {
+			log.Printf("send notification (like): %v", err)
+		}
 		// End create notification
 	}
 
@@ -725,7 +750,7 @@ func DeletePost(c *fiber.Ctx) error {
 	primID, err := primitive.ObjectIDFromHex(c.Params("id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
+			"error": internalDetail(err),
 		})
 	}
 
@@ -738,7 +763,7 @@ func DeletePost(c *fiber.Ctx) error {
 		}
 
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -752,7 +777,7 @@ func DeletePost(c *fiber.Ctx) error {
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 

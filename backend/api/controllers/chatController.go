@@ -43,7 +43,7 @@ func SendMessage(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid request body",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -90,7 +90,7 @@ func SendMessage(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
 			"error":   "Failed to save message",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -104,13 +104,13 @@ func SendMessage(c *fiber.Ctx) error {
 			if retryErr != nil {
 				return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
 					"message": "Failed to update unread message",
-					"details": retryErr.Error(),
+					"details": internalDetail(retryErr),
 				})
 			}
 		} else {
 			return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
 				"message": "Failed to update unread message",
-				"details": err.Error(),
+				"details": internalDetail(err),
 			})
 		}
 	}
@@ -149,7 +149,7 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid value for from",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 	if from < 0 {
@@ -226,7 +226,7 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to retrieve messages",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 	defer cursor.Close(ctx)
@@ -239,7 +239,7 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Failed to decode messages",
-				"error":   err.Error(),
+				"error":   internalDetail(err),
 			})
 		}
 		messages = append(messages, msg)
@@ -249,7 +249,7 @@ func GetMsgsByNums(c *fiber.Ctx) error {
 	if err := cursor.Err(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Database cursor error during iteration",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 
@@ -305,7 +305,7 @@ func GetUserUnreadMsg(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to retrieve unread messages",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 	defer cursor.Close(ctx)
@@ -319,7 +319,7 @@ func GetUserUnreadMsg(c *fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Failed to decode unread messages",
-				"error":   err.Error(),
+				"error":   internalDetail(err),
 			})
 		}
 		if !urm.IsRead {
@@ -331,7 +331,7 @@ func GetUserUnreadMsg(c *fiber.Ctx) error {
 	if err := cursor.Err(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Database cursor error during iteration",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 
@@ -404,7 +404,7 @@ func ReadMsg(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to update unread message",
-			"error":   err.Error(),
+			"error":   internalDetail(err),
 		})
 	}
 

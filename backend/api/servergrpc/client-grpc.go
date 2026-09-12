@@ -35,8 +35,11 @@ func NewClient() (*Client, error) {
 	}, nil
 }
 
+// Close 释放底层 gRPC 连接。
 func (c *Client) Close() {
-	c.conn.Close()
+	if err := c.conn.Close(); err != nil {
+		log.Printf("close grpc client: %v", err)
+	}
 }
 
 func (c *Client) SendGrpcNotification(ctx context.Context, xId, details, mainUserId, targetId string,

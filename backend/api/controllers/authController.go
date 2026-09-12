@@ -2,12 +2,11 @@ package controllers
 
 import (
 	"Server/database"
+	"Server/middleware"
 	"Server/models"
 	"context"
-	"os"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -42,7 +41,7 @@ func Register(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid request body",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -55,7 +54,7 @@ func Register(c *fiber.Ctx) error {
 		})
 	} else if err != mongo.ErrNoDocuments {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -63,7 +62,7 @@ func Register(c *fiber.Ctx) error {
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -88,7 +87,7 @@ func Register(c *fiber.Ctx) error {
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -98,19 +97,17 @@ func Register(c *fiber.Ctx) error {
 
 	if err := UserSchema.FindOne(ctx, query).Decode(&createdUser); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
-	// 注册成功后签发 JWT，Issuer 写入用户 ID，过期时间为 24 小时
-	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		Issuer:    createdUser.ID.Hex(),
-		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	// 从环境变量读取签名密钥并生成 Token
-	JwtSecret := os.Getenv("JWT_SECRET")
-
-	token, _ := claims.SignedString([]byte(JwtSecret))
+	// 注册成功后签发 JWT：签发逻辑统一走 middleware.IssueToken，
+	// 密钥未配置时 fail-closed（绝不用空密钥签名）
+	token, err := middleware.IssueToken(createdUser.ID.Hex())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "authentication is not configured",
+		})
+	}
 
 	// 返回新注册用户信息和访问令牌（剔除密码哈希）
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
@@ -147,7 +144,7 @@ func Login(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "Invalid request body",
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -161,7 +158,7 @@ func Login(c *fiber.Ctx) error {
 		}
 
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"details": err.Error(),
+			"details": internalDetail(err),
 		})
 	}
 
@@ -181,16 +178,13 @@ func Login(c *fiber.Ctx) error {
 	}
 	loginGuard.Reset(user.Email + "|" + c.IP())
 
-	// 登录成功后生成 JWT，Issuer 写入用户 ID，过期时间设置为 24 小时
-	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		Issuer:    user.ID.Hex(),
-		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	// 从环境变量读取签名密钥并签发 Token
-	JwtSecret := os.Getenv("JWT_SECRET")
-
-	token, _ := claims.SignedString([]byte(JwtSecret))
+	// 登录成功后签发 JWT（与注册共用同一套签发逻辑）
+	token, err := middleware.IssueToken(user.ID.Hex())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "authentication is not configured",
+		})
+	}
 
 	// 返回登录用户信息和访问令牌（剔除密码哈希）
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
