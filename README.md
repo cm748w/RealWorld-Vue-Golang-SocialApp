@@ -390,9 +390,3 @@ ws://localhost:8088/ws/:userId
 - 修改实时服务时，优先验证 WebSocket 和 gRPC 链路。
 
 
-
-## 作者与联系方式
-
-- 作者：cm748w
-- GitHub：https://github.com/cm748w/RealWorld-Vue-Golang-SocialApp
-- 邮箱：shanacongyun@163.com
