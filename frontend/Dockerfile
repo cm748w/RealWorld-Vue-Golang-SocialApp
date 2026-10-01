@@ -5,7 +5,7 @@
 # （"Release file ... is expired"），换任何镜像站都一样。之前阿里云那次 .deb 404
 # 只是同一个病的二阶症状，锅不在阿里云。Debian 12 的安全仓库仍在正常更新：
 # 同一台机器、同一网络下实测 apt-get update 21s 通过。
-FROM node:24-bookworm-slim AS build
+FROM node:26-bookworm-slim AS build
 WORKDIR /usr/src/app
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
 # Cypress 二进制从官方 CDN 下载很慢，改用 npmmirror 加速（这是 npm 生态的镜像，
