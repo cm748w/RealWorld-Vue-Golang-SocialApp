@@ -1,4 +1,4 @@
-FROM golang:1.26.8 AS builder
+FROM golang:1.27.3 AS builder
 WORKDIR /usr/src/app
 COPY backend/realTimeChat/go.mod ./
 COPY backend/realTimeChat/go.sum ./
