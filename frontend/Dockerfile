@@ -32,7 +32,7 @@ RUN npm install -g pnpm@11.7.0 --registry=https://registry.npmmirror.com/ && \
 
 COPY frontend .
 RUN pnpm run build
-FROM nginx:1.27.4-alpine
+FROM nginx:1.31.8-alpine
 
 # ---------------------------------------------------------------------------
 #  运行时非 root 化
